@@ -2,20 +2,22 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import QDate, QTimer
 
-from ..net_server import MLLPServer
+from lab_core.db import init_db
 
 # Descarga de órdenes (mock o real)
 from lab_core.orders_client import (
+    download_and_store_orders,
     get_orders_xml_from_cfg,
     parse_orders,
-    download_and_store_orders,
 )
 from lab_core.orders_store import upsert_orders
 from lab_core.result_ingest import ingest_inbox
-from lab_core.db import init_db
+
+from ..net_server import MLLPServer
+
 
 class MonitorTab(QtWidgets.QWidget):
     def __init__(self, read_cfg_safe, write_cfg_safe):
@@ -87,7 +89,9 @@ class MonitorTab(QtWidgets.QWidget):
         btns.addWidget(self.order_date)
 
         self.btn_fetch_date = QtWidgets.QPushButton("Descargar órdenes (fecha)")
-        self.btn_fetch_date.setToolTip("Usa mock si api.use_mock=true; si no, llama servicio real.")
+        self.btn_fetch_date.setToolTip(
+            "Usa mock si api.use_mock=true; si no, llama servicio real."
+        )
         btns.addWidget(self.btn_fetch_date)
 
         # Botones de acciones varias
@@ -121,7 +125,7 @@ class MonitorTab(QtWidgets.QWidget):
 
         # 2) timer para resultados
         self.results_timer = QtCore.QTimer(self)
-        self.results_timer.setInterval(10_000)   # cada 10 s (ajústalo)
+        self.results_timer.setInterval(10_000)  # cada 10 s (ajústalo)
         self.results_timer.timeout.connect(self._poll_results)
         self.results_timer.start()
 
@@ -136,7 +140,9 @@ class MonitorTab(QtWidgets.QWidget):
             res = ingest_inbox(inbox_path=self.filedir.text().strip() or "inbox")
             if res:
                 if res["processed"] or res["errors"]:
-                    self._append_monitor(f"[RESULTADOS] Ingesta: ok={res['processed']} err={res['errors']}")
+                    self._append_monitor(
+                        f"[RESULTADOS] Ingesta: ok={res['processed']} err={res['errors']}"
+                    )
         except Exception as e:
             self._append_monitor(f"[ERROR] Ingesta resultados: {e}")
 
@@ -179,7 +185,9 @@ class MonitorTab(QtWidgets.QWidget):
                     api["mock_file"] = desired
                     cfg["api"] = api
                     if not self.write_cfg(cfg):
-                        self._append_monitor("[WARN] No se pudo actualizar mock_file en settings.yaml.")
+                        self._append_monitor(
+                            "[WARN] No se pudo actualizar mock_file en settings.yaml."
+                        )
                     else:
                         self._append_monitor(f"[MOCK] Usando archivo: {desired}")
 
@@ -187,8 +195,14 @@ class MonitorTab(QtWidgets.QWidget):
             records = parse_orders(xml_text)
             upsert_orders(records)
 
-            self._append_monitor(f"[ORDENES] {len(records)} pacientes cargados para {fecha}")
-            self._append_monitor("[INFO] Fuente: MOCK (archivo local)" if use_mock else "[INFO] Fuente: Servicio real")
+            self._append_monitor(
+                f"[ORDENES] {len(records)} pacientes cargados para {fecha}"
+            )
+            self._append_monitor(
+                "[INFO] Fuente: MOCK (archivo local)"
+                if use_mock
+                else "[INFO] Fuente: Servicio real"
+            )
 
         except FileNotFoundError as e:
             self._append_monitor(f"[ERROR] Mock no encontrado: {e}")
@@ -255,8 +269,8 @@ class MonitorTab(QtWidgets.QWidget):
             upsert_orders(records)
 
             self._append_monitor(
-                f"[ORDENES/AUTO] {len(records)} pacientes cargados para {fecha}" +
-                (" [MOCK]" if use_mock else " [REAL]")
+                f"[ORDENES/AUTO] {len(records)} pacientes cargados para {fecha}"
+                + (" [MOCK]" if use_mock else " [REAL]")
             )
         except FileNotFoundError as e:
             self._append_monitor(f"[ERROR] Mock no encontrado ({fecha}): {e}")
@@ -287,15 +301,19 @@ class MonitorTab(QtWidgets.QWidget):
         existing = self.read_cfg()
         existing.update(cfg)
         if not self.write_cfg(existing):
-            QtWidgets.QMessageBox.warning(self, "Configuración", "No se pudo guardar settings.yaml.")
+            QtWidgets.QMessageBox.warning(
+                self, "Configuración", "No se pudo guardar settings.yaml."
+            )
 
     def _on_mode_change(self):
-        is_file = (self.mode.currentText() == "file")
+        is_file = self.mode.currentText() == "file"
         for w in (self.dir_label, self.filedir, self.btn_browse):
             w.setVisible(is_file)
 
     def _pick_folder(self):
-        d = QtWidgets.QFileDialog.getExistingDirectory(self, "Selecciona carpeta de entrada")
+        d = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Selecciona carpeta de entrada"
+        )
         if d:
             self.filedir.setText(d)
             self.save_now()
@@ -307,12 +325,18 @@ class MonitorTab(QtWidgets.QWidget):
     # ---------- Server wiring ----------
     def _connect_server_signals(self):
         # Hacia el memo de Monitor
-        self.server.started.connect(lambda h, p: self._append_monitor(f"[START] Escuchando {h}:{p} (MLLP)"))
-        self.server.stopped.connect(lambda: self._append_monitor("[STOP] Servidor detenido"))
+        self.server.started.connect(
+            lambda h, p: self._append_monitor(f"[START] Escuchando {h}:{p} (MLLP)")
+        )
+        self.server.stopped.connect(
+            lambda: self._append_monitor("[STOP] Servidor detenido")
+        )
         self.server.received.connect(self._on_payload)
         self.server.error.connect(lambda msg: self._append_monitor(f"[ERROR] {msg}"))
         # (Opcional) hacia logger
-        self.server.started.connect(lambda h, p: self.ui_log.info(f"Escuchando {h}:{p} (MLLP)"))
+        self.server.started.connect(
+            lambda h, p: self.ui_log.info(f"Escuchando {h}:{p} (MLLP)")
+        )
         self.server.stopped.connect(lambda: self.ui_log.info("Servidor detenido"))
         self.server.received.connect(lambda _: self.ui_log.info("HL7 recibido"))
         self.server.error.connect(lambda msg: self.ui_log.error(msg))

@@ -1,7 +1,15 @@
+# configs/settings.yaml.example
+api:
+  base_url: "https://demo.rednacional.com.co/erp/snt/websys_webservices.snt"
+  key: "CHANGEME_API_KEY"
+  secret: "CHANGEME_API_SECRET"
+  timeout: 20
 
-# Example settings
 tcp:
   host: "0.0.0.0"
   port: 5002
+
 paths:
-  outbox: "./inbox"
+  inbox: "./inbox"
+  outbox_xml: "./outbox_xml"
+  logs: "./logs"

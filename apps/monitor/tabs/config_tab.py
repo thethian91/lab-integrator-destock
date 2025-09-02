@@ -1,5 +1,7 @@
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtCore, QtWidgets
+
 from lab_core.config import config_path
+
 
 class ConfigTab(QtWidgets.QWidget):
     # Señal para notificar que se guardó settings.yaml (p/ refrescar en MainWindow)
@@ -208,22 +210,30 @@ class ConfigTab(QtWidgets.QWidget):
         return w
 
     def _pick_dir_inbox(self):
-        d = QtWidgets.QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de entrada")
+        d = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Seleccionar carpeta de entrada"
+        )
         if d:
             self.file_inbox_dir.setText(d)
 
     def _pick_dir_outbox(self):
-        d = QtWidgets.QFileDialog.getExistingDirectory(self, "Seleccionar carpeta paths.outbox")
+        d = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Seleccionar carpeta paths.outbox"
+        )
         if d:
             self.paths_outbox.setText(d)
 
     def _pick_dir_exp_outbox(self):
-        d = QtWidgets.QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de exportación")
+        d = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Seleccionar carpeta de exportación"
+        )
         if d:
             self.exp_outbox.setText(d)
 
     def _pick_file_mock(self):
-        f, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Seleccionar mock XML", filter="XML (*.xml);;Todos (*)")
+        f, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Seleccionar mock XML", filter="XML (*.xml);;Todos (*)"
+        )
         if f:
             self.api_mock_file.setText(f)
 
@@ -290,7 +300,18 @@ class ConfigTab(QtWidgets.QWidget):
         cfg = self.read_cfg() or {}
 
         # Asegura sub-dicts
-        for key in ["tcp", "paths", "memo", "input", "file", "logging", "api", "orders", "monitor", "results_export"]:
+        for key in [
+            "tcp",
+            "paths",
+            "memo",
+            "input",
+            "file",
+            "logging",
+            "api",
+            "orders",
+            "monitor",
+            "results_export",
+        ]:
             if key not in cfg or not isinstance(cfg[key], dict):
                 cfg[key] = {}
 
@@ -335,7 +356,9 @@ class ConfigTab(QtWidgets.QWidget):
         # Guardar
         ok = self.write_cfg(cfg)
         if not ok:
-            QtWidgets.QMessageBox.warning(self, "Configuración", "No se pudo guardar settings.yaml.")
+            QtWidgets.QMessageBox.warning(
+                self, "Configuración", "No se pudo guardar settings.yaml."
+            )
             return
 
         # Aviso OK + señal para refrescar en caliente

@@ -1,6 +1,7 @@
 # app/transform.py (o el módulo donde generas tu XML)
 from datetime import datetime
 
+
 def to_yyyymmdd(value: str | datetime) -> str:
     """
     Acepta datetime o string en formatos comunes ('YYYY-MM-DD', 'YYYY/MM/DD', 'DD/MM/YYYY', etc.)
@@ -23,6 +24,7 @@ def to_yyyymmdd(value: str | datetime) -> str:
         return digits[:8]
     return digits  # último recurso
 
+
 def build_xml_log(registro: dict) -> str:
     """
     Ejemplo: usa to_yyyymmdd para la etiqueta <fecha>.
@@ -32,12 +34,18 @@ def build_xml_log(registro: dict) -> str:
 
     root = Element("resultado_ws")
     detalle = SubElement(root, "detalle_respuesta")
-    pac = SubElement(detalle, "paciente", {"documento": str(registro.get("paciente_doc", ""))})
+    pac = SubElement(
+        detalle, "paciente", {"documento": str(registro.get("paciente_doc", ""))}
+    )
     exam = SubElement(pac, "examen")
 
     SubElement(exam, "id").text = str(registro.get("idexamen", ""))
-    SubElement(exam, "protocolo_codigo").text = str(registro.get("protocolo_codigo", ""))
-    SubElement(exam, "protocolo_titulo").text = str(registro.get("protocolo_titulo", ""))
+    SubElement(exam, "protocolo_codigo").text = str(
+        registro.get("protocolo_codigo", "")
+    )
+    SubElement(exam, "protocolo_titulo").text = str(
+        registro.get("protocolo_titulo", "")
+    )
 
     # ⬇️ FECHA ajustada a YYYYMMDD
     fecha_original = registro.get("fecha")  # p.ej. '2025-08-25' o datetime

@@ -1,23 +1,33 @@
 # lab_core/dispatcher.py
 from __future__ import annotations
-from pathlib import Path
-from typing import Dict, List
-import sqlite3
 
-from lab_core.db import get_conn, ensure_obx_dispatch_cols, mark_obx_exported, mark_obx_error
+import sqlite3
+from pathlib import Path
+
+from lab_core.db import (
+    ensure_obx_dispatch_cols,
+    get_conn,
+    mark_obx_error,
+    mark_obx_exported,
+)
 from lab_core.xml_builder import build_log_envio_for_result
 
-def _select_pending_obx(conn: sqlite3.Connection, limit: int) -> List[sqlite3.Row]:
+
+def _select_pending_obx(conn: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         SELECT o.id AS obx_id, o.result_id
           FROM hl7_obx_results o
          WHERE COALESCE(o.export_status,'') NOT IN ('SENT','SKIPPED')
          ORDER BY o.id
          LIMIT ?
-    """, (limit,))
+    """,
+        (limit,),
+    )
     return cur.fetchall()
+
 
 def _write_xml(out_dir: Path, result_id: int, obx_id: int, xml: str) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -25,7 +35,8 @@ def _write_xml(out_dir: Path, result_id: int, obx_id: int, xml: str) -> Path:
     path.write_text(xml, encoding="utf-8")
     return path
 
-def dispatch_cycle(db_path: str, out_dir: str, batch_size: int = 200) -> Dict[str, int]:
+
+def dispatch_cycle(db_path: str, out_dir: str, batch_size: int = 200) -> dict[str, int]:
     """
     Un ciclo:
       - Selecciona OBX pendientes

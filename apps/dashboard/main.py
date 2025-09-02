@@ -1,8 +1,9 @@
-
 # apps/dashboard/main.py
 import sys
 from pathlib import Path
-from PySide6 import QtWidgets, QtGui, QtCore
+
+from PySide6 import QtCore, QtWidgets
+
 
 class Dashboard(QtWidgets.QMainWindow):
     def __init__(self):
@@ -10,7 +11,8 @@ class Dashboard(QtWidgets.QMainWindow):
         self.setWindowTitle("Lab Integrator • Dashboard")
         self.resize(900, 560)
 
-        central = QtWidgets.QWidget(); self.setCentralWidget(central)
+        central = QtWidgets.QWidget()
+        self.setCentralWidget(central)
         v = QtWidgets.QVBoxLayout(central)
 
         top = QtWidgets.QHBoxLayout()
@@ -18,12 +20,18 @@ class Dashboard(QtWidgets.QMainWindow):
         self.btn_browse = QtWidgets.QPushButton("...")
         self.btn_refresh = QtWidgets.QPushButton("Refrescar")
         top.addWidget(QtWidgets.QLabel("Carpeta de resultados:"))
-        top.addWidget(self.folder); top.addWidget(self.btn_browse); top.addWidget(self.btn_refresh)
+        top.addWidget(self.folder)
+        top.addWidget(self.btn_browse)
+        top.addWidget(self.btn_refresh)
         v.addLayout(top)
 
         self.table = QtWidgets.QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["Archivo", "Tamaño (bytes)", "Modificado"])
-        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.table.setHorizontalHeaderLabels(
+            ["Archivo", "Tamaño (bytes)", "Modificado"]
+        )
+        self.table.horizontalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch
+        )
         v.addWidget(self.table)
 
         self.btn_browse.clicked.connect(self.pick_dir)
@@ -47,8 +55,18 @@ class Dashboard(QtWidgets.QMainWindow):
             row = self.table.rowCount()
             self.table.insertRow(row)
             self.table.setItem(row, 0, QtWidgets.QTableWidgetItem(f.name))
-            self.table.setItem(row, 1, QtWidgets.QTableWidgetItem(str(f.stat().st_size)))
-            self.table.setItem(row, 2, QtWidgets.QTableWidgetItem(QtCore.QDateTime.fromSecsSinceEpoch(int(f.stat().st_mtime)).toString(QtCore.Qt.ISODate)))
+            self.table.setItem(
+                row, 1, QtWidgets.QTableWidgetItem(str(f.stat().st_size))
+            )
+            self.table.setItem(
+                row,
+                2,
+                QtWidgets.QTableWidgetItem(
+                    QtCore.QDateTime.fromSecsSinceEpoch(
+                        int(f.stat().st_mtime)
+                    ).toString(QtCore.Qt.ISODate)
+                ),
+            )
 
     def open_file(self, item):
         row = item.row()
@@ -65,11 +83,13 @@ class Dashboard(QtWidgets.QMainWindow):
             layout.addWidget(txt)
             dlg.exec()
 
+
 def main():
     app = QtWidgets.QApplication(sys.argv)
     win = Dashboard()
     win.show()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

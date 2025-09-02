@@ -1,5 +1,6 @@
 from .db import get_conn
 
+
 def upsert_orders(records, db_path: str = "data/labintegrador.db"):
     """
     records: lista de OrderRecord (de orders_client.parse_orders)
@@ -25,7 +26,16 @@ def upsert_orders(records, db_path: str = "data/labintegrador.db"):
                     "ON CONFLICT(id) DO UPDATE SET "
                     "paciente_doc=excluded.paciente_doc, protocolo_codigo=excluded.protocolo_codigo, protocolo_titulo=excluded.protocolo_titulo, "
                     "tubo=excluded.tubo, tubo_muestra=excluded.tubo_muestra, fecha=excluded.fecha, hora=excluded.hora",
-                    (int(e.id), rec.documento, e.protocolo_codigo, e.protocolo_titulo,
-                     e.tubo, e.tubo_muestra, e.fecha, e.hora, int(e.id)),
+                    (
+                        int(e.id),
+                        rec.documento,
+                        e.protocolo_codigo,
+                        e.protocolo_titulo,
+                        e.tubo,
+                        e.tubo_muestra,
+                        e.fecha,
+                        e.hora,
+                        int(e.id),
+                    ),
                 )
     conn.close()

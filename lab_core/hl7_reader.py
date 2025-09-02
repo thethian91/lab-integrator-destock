@@ -1,7 +1,7 @@
 # lab_core/hl7_reader.py
 from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import List, Dict
 from datetime import datetime
 
 SEG = "\r"
@@ -34,7 +34,7 @@ class OBX:
     ref_range: str
     flags: str
     obs_dt: str
-    raw: List[str] = field(default_factory=list)
+    raw: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -45,7 +45,7 @@ class OBR:
     proto_texto: str
     tubo_muestra: str
     obr_dt: str
-    raw: List[str] = field(default_factory=list)
+    raw: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -55,14 +55,14 @@ class PID:
     nombre: str
     sexo: str
     f_nac: str
-    raw: List[str] = field(default_factory=list)
+    raw: list[str] = field(default_factory=list)
 
 
 @dataclass
 class HL7Message:
     pid: PID
     obr: OBR
-    obx_list: List[OBX]
+    obx_list: list[OBX]
     sending_app: str
     analyzer_name: str
 
@@ -82,7 +82,7 @@ def parse_hl7(text: str | bytes, analyzer_alias: str | None = None) -> HL7Messag
         text = text.decode("utf-8", errors="ignore")
 
     segs = [s for s in text.replace("\n", "\r").split(SEG) if s]
-    fields_by_seg: Dict[str, List[List[str]]] = {}
+    fields_by_seg: dict[str, list[list[str]]] = {}
 
     for line in segs:
         typ = (line[:3] or "").strip()
@@ -105,7 +105,9 @@ def parse_hl7(text: str | bytes, analyzer_alias: str | None = None) -> HL7Messag
         pid19 = pidf[19] if len(pidf) > 19 else ""
         nombre = _get(pid5, 0) or pid5
         doc = pid19 or _get(pid3, 1) or pid3
-        pid = PID(patient_id=pid3, doc=doc, nombre=nombre, sexo=pid8, f_nac=pid7, raw=pidf)
+        pid = PID(
+            patient_id=pid3, doc=doc, nombre=nombre, sexo=pid8, f_nac=pid7, raw=pidf
+        )
     else:
         # Icon-3: paciente en NTE
         patient_name = ""
@@ -138,7 +140,7 @@ def parse_hl7(text: str | bytes, analyzer_alias: str | None = None) -> HL7Messag
     )
 
     # OBX
-    obx_list: List[OBX] = []
+    obx_list: list[OBX] = []
     for obxf in fields_by_seg.get("OBX", []):
         # Finecare: OBX-3 = code; OBX-4 = text
         # Icon-3:   OBX-3 vacío; OBX-4 = code^text (e.g., 1^HGB)

@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 import sqlite3
-from pathlib import Path
-from typing import Iterable
+from collections.abc import Iterable
 from datetime import datetime  # <- necesario para mark_obx_exported
+from pathlib import Path
 
 # === Ruta única y consistente en toda la app ===
 DEFAULT_DB_PATH = "data/labintegrador.db"
@@ -136,6 +137,7 @@ INSERT OR IGNORE INTO schema_meta(key, value) VALUES ('schema_version', '1');
 
 # =============== Conexión y helpers ===============
 
+
 def get_conn(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
@@ -143,9 +145,11 @@ def get_conn(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
+
 def _exec_script(conn: sqlite3.Connection, sql_script: str) -> None:
     with conn:
         conn.executescript(sql_script)
+
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
     try:
@@ -156,6 +160,7 @@ def get_schema_version(conn: sqlite3.Connection) -> int:
     except Exception:
         return 0
 
+
 def set_schema_version(conn: sqlite3.Connection, version: int) -> None:
     with conn:
         conn.execute(
@@ -163,6 +168,7 @@ def set_schema_version(conn: sqlite3.Connection, version: int) -> None:
             "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             (str(version),),
         )
+
 
 # =============== Vista de compatibilidad ===============
 def _build_obx_results_view_sql(extra_aliases: Iterable[str] = ()) -> str:
@@ -206,37 +212,47 @@ FROM hl7_obx_results o
 JOIN hl7_results r ON r.id = o.result_id;
 """
 
-def recreate_obx_view(conn: sqlite3.Connection, extra_aliases: Iterable[str] = ()) -> None:
+
+def recreate_obx_view(
+    conn: sqlite3.Connection, extra_aliases: Iterable[str] = ()
+) -> None:
     sql = _build_obx_results_view_sql(extra_aliases)
     _exec_script(conn, sql)
 
+
 # =============== Migraciones ligeras ===============
+
 
 def _table_has_col(conn: sqlite3.Connection, table: str, col: str) -> bool:
     cur = conn.execute(f"PRAGMA table_info('{table}')")
     return any(r[1] == col for r in cur.fetchall())
+
 
 def ensure_obx_dispatch_cols(db_path: str = DEFAULT_DB_PATH) -> None:
     """Garantiza columnas export_* en hl7_obx_results para BD ya existentes."""
     conn = get_conn(db_path)
     try:
         cols = {
-            "export_status":   "TEXT",
+            "export_status": "TEXT",
             "export_attempts": "INTEGER DEFAULT 0",
-            "export_error":    "TEXT",
-            "export_path":     "TEXT",
-            "exported_at":     "TEXT",
+            "export_error": "TEXT",
+            "export_path": "TEXT",
+            "exported_at": "TEXT",
         }
         for c, ddl in cols.items():
             if not _table_has_col(conn, "hl7_obx_results", c):
                 conn.execute(f"ALTER TABLE hl7_obx_results ADD COLUMN {c} {ddl}")
         # crea el índice ahora que la columna existe
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_obx_export_status ON hl7_obx_results(export_status)")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_obx_export_status ON hl7_obx_results(export_status)"
+        )
         conn.commit()
     finally:
         conn.close()
 
+
 # =============== Inicialización completa ===============
+
 
 def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
     """
@@ -267,11 +283,14 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
     # Migración out-of-band: asegurar columnas export_* (e índice) aunque la tabla ya existiera
     ensure_obx_dispatch_cols(db_path)
 
+
 def ensure_schema(db_path: str = DEFAULT_DB_PATH) -> None:
     """Llama esto al arrancar tu servicio y tu UI (misma ruta)."""
     init_db(db_path)
 
+
 # =============== Utilidades de verificación ===============
+
 
 def debug_dump(db_path: str = DEFAULT_DB_PATH) -> None:
     conn = get_conn(db_path)
@@ -284,7 +303,14 @@ def debug_dump(db_path: str = DEFAULT_DB_PATH) -> None:
             print(f" - {r['type']}: {r['name']}")
 
         print("\nConteos:")
-        for name in ["patients", "exams", "hl7_results", "hl7_obx_results", "obx_results", "code_map"]:
+        for name in [
+            "patients",
+            "exams",
+            "hl7_results",
+            "hl7_obx_results",
+            "obx_results",
+            "code_map",
+        ]:
             try:
                 cnt = conn.execute(f"SELECT COUNT(1) AS c FROM {name}").fetchone()["c"]
                 print(f"{name}: {cnt}")
@@ -293,7 +319,9 @@ def debug_dump(db_path: str = DEFAULT_DB_PATH) -> None:
     finally:
         conn.close()
 
+
 # --- Mapeo de códigos (code_map) ---------------------------------------------
+
 
 def ensure_code_map_schema(db_path: str = DEFAULT_DB_PATH):
     """Idempotente: crea code_map e índice único (si no existieran)."""
@@ -304,12 +332,19 @@ def ensure_code_map_schema(db_path: str = DEFAULT_DB_PATH):
     finally:
         conn.close()
 
-def code_map_upsert(analyzer_name: str, signature_type: str, signature_value: str,
-                    client_code: str, client_title: str | None = None,
-                    db_path: str = DEFAULT_DB_PATH):
+
+def code_map_upsert(
+    analyzer_name: str,
+    signature_type: str,
+    signature_value: str,
+    client_code: str,
+    client_title: str | None = None,
+    db_path: str = DEFAULT_DB_PATH,
+):
     conn = get_conn(db_path)
     try:
-        conn.execute("""
+        conn.execute(
+            """
             INSERT INTO code_map (analyzer_name, signature_type, signature_value, client_code, client_title, is_active)
             VALUES (?, ?, ?, ?, ?, 1)
             ON CONFLICT(analyzer_name, signature_type, signature_value)
@@ -317,54 +352,78 @@ def code_map_upsert(analyzer_name: str, signature_type: str, signature_value: st
                           client_title=excluded.client_title,
                           is_active=1,
                           updated_at=datetime('now')
-        """, (analyzer_name, signature_type, signature_value, client_code, client_title))
+        """,
+            (analyzer_name, signature_type, signature_value, client_code, client_title),
+        )
         conn.commit()
     finally:
         conn.close()
 
-def code_map_delete(analyzer_name: str, signature_type: str, signature_value: str,
-                    db_path: str = DEFAULT_DB_PATH):
+
+def code_map_delete(
+    analyzer_name: str,
+    signature_type: str,
+    signature_value: str,
+    db_path: str = DEFAULT_DB_PATH,
+):
     conn = get_conn(db_path)
     try:
-        conn.execute("""
+        conn.execute(
+            """
             DELETE FROM code_map
             WHERE analyzer_name=? AND signature_type=? AND signature_value=?
-        """, (analyzer_name, signature_type, signature_value))
+        """,
+            (analyzer_name, signature_type, signature_value),
+        )
         conn.commit()
     finally:
         conn.close()
 
-def code_map_lookup(conn: sqlite3.Connection,
-                    analyzer_name: str,
-                    obr_code: str | None = None,
-                    obx_code: str | None = None,
-                    obx_text: str | None = None) -> tuple[str | None, str | None]:
+
+def code_map_lookup(
+    conn: sqlite3.Connection,
+    analyzer_name: str,
+    obr_code: str | None = None,
+    obx_code: str | None = None,
+    obx_text: str | None = None,
+) -> tuple[str | None, str | None]:
     """
     Devuelve (client_code, client_title) si encuentra un mapeo activo.
     Prioridad: OBR_CODE -> OBX_CODE -> OBX_TEXT
     """
     cur = conn.cursor()
+
     def _q(sig_type: str, value: str | None):
         if not value:
             return None
-        cur.execute("""
+        cur.execute(
+            """
             SELECT client_code, client_title
             FROM code_map
             WHERE analyzer_name=? AND signature_type=? AND signature_value=? AND is_active=1
             LIMIT 1
-        """, (analyzer_name, sig_type, value))
+        """,
+            (analyzer_name, sig_type, value),
+        )
         return cur.fetchone()
 
-    for sig_type, value in (("OBR_CODE", obr_code), ("OBX_CODE", obx_code), ("OBX_TEXT", obx_text)):
+    for sig_type, value in (
+        ("OBR_CODE", obr_code),
+        ("OBX_CODE", obx_code),
+        ("OBX_TEXT", obx_text),
+    ):
         row = _q(sig_type, value)
         if row:
             return row[0], row[1]
     return None, None
 
+
 # --- Helpers de despacho de XML por OBX --------------------------------------
 
+
 def mark_obx_exported(conn: sqlite3.Connection, obx_id: int, path: str) -> None:
-    conn.execute("""
+    conn.execute(
+        """
         UPDATE hl7_obx_results
            SET export_status='SENT',
                export_error=NULL,
@@ -372,13 +431,19 @@ def mark_obx_exported(conn: sqlite3.Connection, obx_id: int, path: str) -> None:
                exported_at=?,
                export_attempts=export_attempts+1
          WHERE id=?
-    """, (path, datetime.now().isoformat(timespec="seconds"), obx_id))
+    """,
+        (path, datetime.now().isoformat(timespec="seconds"), obx_id),
+    )
+
 
 def mark_obx_error(conn: sqlite3.Connection, obx_id: int, err: str) -> None:
-    conn.execute("""
+    conn.execute(
+        """
         UPDATE hl7_obx_results
            SET export_status='ERROR',
                export_error=?,
                export_attempts=export_attempts+1
          WHERE id=?
-    """, (err[:500], obx_id))
+    """,
+        (err[:500], obx_id),
+    )

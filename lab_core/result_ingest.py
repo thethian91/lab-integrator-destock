@@ -1,20 +1,20 @@
 # lab_core/result_ingest.py
 from __future__ import annotations
-from pathlib import Path
-from datetime import datetime
-import traceback
-import sqlite3
-import os
 
-from lab_core.hl7_reader import parse_hl7, HL7Message
+import sqlite3
+import traceback
+from datetime import datetime
+from pathlib import Path
+
 from lab_core.hl7_parser import load_hl7_map_yaml, parse_hl7_configurable
-from lab_core.db import DEFAULT_DB_PATH  # si no lo usas, puedes quitarlo
+from lab_core.hl7_reader import HL7Message, parse_hl7
 
 HL7_MAP = load_hl7_map_yaml("configs/hl7_map.yaml")
 
 # ============
 # Ingesta Inbox
 # ============
+
 
 def ingest_inbox(inbox_path: str = "inbox"):
     """Procesa todos los archivos HL7 de la carpeta `inbox/`"""
@@ -37,13 +37,16 @@ def ingest_inbox(inbox_path: str = "inbox"):
                 traceback.format_exc(), encoding="utf-8", errors="ignore"
             )
             file.rename(failed / file.name)
-            print(f"[Inbox] ERROR al procesar {file.name}: {e} (ver {failed / (file.stem + '.error.txt')})")
+            print(
+                f"[Inbox] ERROR al procesar {file.name}: {e} (ver {failed / (file.stem + '.error.txt')})"
+            )
     print(f"[Inbox] Total procesados: {count}")
 
 
 # =====================
 # Ingesta archivo HL7
 # =====================
+
 
 def _split_iso(dt_iso: str) -> tuple[str, str]:
     if not dt_iso:
@@ -103,20 +106,17 @@ def ingest_result_file(path: Path) -> None:
             "received_at": datetime.now().isoformat(timespec="seconds"),
             "analyzer_name": (msg.analyzer_name or "UNKNOWN"),
             "raw_hl7": raw_text,
-
             # PID
             "patient_id": patient_id,
             "patient_name": (parsed.get("patient_name") or msg.pid.nombre or ""),
             "birth_date": (msg.pid.f_nac or ""),
             "sex": (msg.pid.sexo or ""),
-
             # OBR
             "order_number": (msg.obr.placer or msg.obr.filler or ""),
             "exam_code": exam_code,
             "exam_title": exam_title,
             "exam_date": exam_date,
             "exam_time": exam_time,
-
             # Metadata
             "source_file": str(path),
             "status": "RAW",
@@ -134,6 +134,7 @@ def ingest_result_file(path: Path) -> None:
 # ==============================
 # Persistencia (con fallback)
 # ==============================
+
 
 def _get_conn_fallback() -> sqlite3.Connection:
     """
@@ -154,7 +155,8 @@ def _get_conn_fallback() -> sqlite3.Connection:
         conn.row_factory = sqlite3.Row
 
         # tablas mínimas
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS hl7_results (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 received_at TEXT,
@@ -175,8 +177,10 @@ def _get_conn_fallback() -> sqlite3.Connection:
                 source_file TEXT,
                 status TEXT
             )
-        """)
-        conn.execute("""
+        """
+        )
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS hl7_obx_results (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 result_id INTEGER,
@@ -190,7 +194,8 @@ def _get_conn_fallback() -> sqlite3.Connection:
                 obs_dt TEXT,
                 FOREIGN KEY(result_id) REFERENCES hl7_results(id)
             )
-        """)
+        """
+        )
         conn.commit()
         return conn
 
@@ -205,18 +210,15 @@ def save_result_record(data: dict, parsed_obx: list[dict] | None = None) -> None
         "received_at": data.get("received_at", ""),
         "analyzer_name": data.get("analyzer_name", "UNKNOWN"),
         "raw_hl7": data.get("raw_hl7", ""),
-
         "patient_id": data.get("patient_id", ""),
         "patient_name": data.get("patient_name", ""),
         "birth_date": data.get("birth_date", ""),
         "sex": data.get("sex", ""),
-
         "order_number": data.get("order_number", ""),
         "exam_code": data.get("exam_code", ""),
         "exam_title": data.get("exam_title", ""),
         "exam_date": data.get("exam_date", ""),
         "exam_time": data.get("exam_time", ""),
-
         "source_file": data.get("source_file", ""),
         "status": data.get("status", "RAW"),
     }
@@ -233,11 +235,20 @@ def save_result_record(data: dict, parsed_obx: list[dict] | None = None) -> None
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
-            payload["received_at"], payload["analyzer_name"], payload["raw_hl7"],
-            payload["patient_id"], payload["patient_name"], payload["birth_date"], payload["sex"],
-            payload["order_number"], payload["exam_code"], payload["exam_title"],
-            payload["exam_date"], payload["exam_time"],
-            payload["source_file"], payload["status"],
+            payload["received_at"],
+            payload["analyzer_name"],
+            payload["raw_hl7"],
+            payload["patient_id"],
+            payload["patient_name"],
+            payload["birth_date"],
+            payload["sex"],
+            payload["order_number"],
+            payload["exam_code"],
+            payload["exam_title"],
+            payload["exam_date"],
+            payload["exam_time"],
+            payload["source_file"],
+            payload["status"],
         ),
     )
     result_id = cur.lastrowid

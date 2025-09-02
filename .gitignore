@@ -1,4 +1,4 @@
-# Logs y artefactos locales
+# runtime
 logs/
 app/storages/inbox/
 app/storages/outbox/
@@ -6,8 +6,11 @@ app/storages/archive/
 app/storages/error/
 app/storages/result_example
 outbox/
-outbox_xml/
 inbox/
+outbox_xml/
+logs/
+data/
+configs/settings.yaml
 
 # IDE
 .vscode/

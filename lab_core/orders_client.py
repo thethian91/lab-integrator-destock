@@ -1,18 +1,18 @@
 # lab_core/orders_client.py
 from __future__ import annotations
 
-
 import logging
-from dataclasses import dataclass, asdict
-from datetime import date
+import xml.etree.ElementTree as ET
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import xml.etree.ElementTree as ET
 
 log = logging.getLogger("lab.integrator.orders")
+
 
 @dataclass
 class Exam:
@@ -29,10 +29,12 @@ class Exam:
     edad: str
     fecha_nacimiento: str
 
+
 @dataclass
 class OrderRecord:
     documento: str
-    examenes: List[Exam]
+    examenes: list[Exam]
+
 
 def _build_session(timeout_s: float = 15.0) -> requests.Session:
     s = requests.Session()
@@ -40,19 +42,22 @@ def _build_session(timeout_s: float = 15.0) -> requests.Session:
         total=3,
         backoff_factor=0.5,
         status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=["GET", "POST"]
+        allowed_methods=["GET", "POST"],
     )
     s.mount("https://", HTTPAdapter(max_retries=retries))
     s.mount("http://", HTTPAdapter(max_retries=retries))
     s.request = _with_timeout(s.request, timeout_s)  # type: ignore
     return s
 
+
 def _with_timeout(func, timeout_s: float):
     def wrapped(method, url, **kwargs):
         if "timeout" not in kwargs:
             kwargs["timeout"] = timeout_s
         return func(method, url, **kwargs)
+
     return wrapped
+
 
 def fetch_orders_xml(
     base_url: str,
@@ -85,7 +90,8 @@ def fetch_orders_xml(
     resp.raise_for_status()
     return text
 
-def parse_orders(xml_text: str) -> List[OrderRecord]:
+
+def parse_orders(xml_text: str) -> list[OrderRecord]:
     """Parsea el XML a objetos OrderRecord -> Exam."""
     # Limpieza simple de caracteres sueltos
     xml_text = xml_text.strip()
@@ -96,59 +102,70 @@ def parse_orders(xml_text: str) -> List[OrderRecord]:
     if detalle is None:
         return []
 
-    records: List[OrderRecord] = []
+    records: list[OrderRecord] = []
     for paciente in detalle.findall("./paciente"):
         doc = paciente.get("documento", "").strip()
-        exams: List[Exam] = []
+        exams: list[Exam] = []
         for ex in paciente.findall("./examen"):
+
             def _t(tag: str) -> str:
                 el = ex.find(tag)
                 return (el.text or "").strip() if el is not None else ""
-            exams.append(Exam(
-                id=_t("id"),
-                protocolo_codigo=_t("protocolo_codigo"),
-                protocolo_titulo=_t("protocolo_titulo"),
-                tubo=_t("tubo"),
-                tubo_muestra=_t("tubo_muestra"),
-                fecha=_t("fecha"),
-                hora=_t("hora"),
-                paciente=_t("paciente"),
-                nombre=_t("nombre"),
-                sexo=_t("sexo"),
-                edad=_t("edad"),
-                fecha_nacimiento=_t("fecha_nacimiento"),
-            ))
+
+            exams.append(
+                Exam(
+                    id=_t("id"),
+                    protocolo_codigo=_t("protocolo_codigo"),
+                    protocolo_titulo=_t("protocolo_titulo"),
+                    tubo=_t("tubo"),
+                    tubo_muestra=_t("tubo_muestra"),
+                    fecha=_t("fecha"),
+                    hora=_t("hora"),
+                    paciente=_t("paciente"),
+                    nombre=_t("nombre"),
+                    sexo=_t("sexo"),
+                    edad=_t("edad"),
+                    fecha_nacimiento=_t("fecha_nacimiento"),
+                )
+            )
         if exams:
             records.append(OrderRecord(documento=doc, examenes=exams))
     return records
 
+
 def save_orders(
-    records: List[OrderRecord],
+    records: list[OrderRecord],
     out_dir: str,
     fecha_exploracion: str,
 ) -> list[str]:
     """Guarda un archivo por paciente (JSON) y retorna las rutas."""
     import json
+
     base = Path(out_dir) / fecha_exploracion
     base.mkdir(parents=True, exist_ok=True)
     saved_paths: list[str] = []
     for rec in records:
         # archivo por paciente; si necesitas uno por examen, se puede cambiar
-        safe_doc = "".join(ch for ch in rec.documento if ch.isalnum() or ch in ("-", "_"))
+        safe_doc = "".join(
+            ch for ch in rec.documento if ch.isalnum() or ch in ("-", "_")
+        )
         path = base / f"{safe_doc or 'sin_documento'}.json"
         data = {
             "fecha_exploracion": fecha_exploracion,
             "documento": rec.documento,
             "examenes": [asdict(e) for e in rec.examenes],
         }
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         saved_paths.append(str(path))
     return saved_paths
 
+
 def download_and_store_orders(
-    cfg: Dict[str, Any],
+    cfg: dict[str, Any],
     fecha_exploracion: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Función de alto nivel: descarga → parsea → guarda."""
     api = cfg.get("api", {}) or {}
     orders_cfg = cfg.get("orders", {}) or {}
@@ -159,7 +176,9 @@ def download_and_store_orders(
     out_dir = orders_cfg.get("out_dir", "inbox/orders")
 
     if not base_url or not key or not secret:
-        raise RuntimeError("Config incompleta: api.base_url/api.key/api.secret son obligatorios.")
+        raise RuntimeError(
+            "Config incompleta: api.base_url/api.key/api.secret son obligatorios."
+        )
 
     xml_text = fetch_orders_xml(base_url, key, secret, action, fecha_exploracion)
     recs = parse_orders(xml_text)
@@ -174,6 +193,7 @@ def download_and_store_orders(
         "count": len(recs),
         "files": paths,
     }
+
 
 def get_orders_xml_from_cfg(cfg: dict, fecha_exploracion: str) -> str:
     """
@@ -199,4 +219,3 @@ def get_orders_xml_from_cfg(cfg: dict, fecha_exploracion: str) -> str:
         api.get("action", "ordenes_laboratorio_fecha"),
         fecha_exploracion,
     )
-

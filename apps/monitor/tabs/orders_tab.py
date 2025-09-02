@@ -1,9 +1,8 @@
 # apps/monitor/tabs/orders_tab.py
 import sqlite3
 from pathlib import Path
-from datetime import datetime
 
-from PySide6 import QtWidgets, QtCore, QtGui
+from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QDate
 
 DB_PATH = "data/labintegrador.db"
@@ -22,6 +21,7 @@ COLUMNS = [
     ("resulted_at", "Resultó"),
     ("sent_at", "Enviado"),
 ]
+
 
 class OrdersTab(QtWidgets.QWidget):
     def __init__(self):
@@ -94,7 +94,11 @@ class OrdersTab(QtWidgets.QWidget):
             documento=self.doc.text().strip() or None,
             date_from=self._qdate_to_str(self.since.date()),
             date_to=self._qdate_to_str(self.until.date()),
-            status=(None if self.status.currentText() == "(Todos)" else self.status.currentText()),
+            status=(
+                None
+                if self.status.currentText() == "(Todos)"
+                else self.status.currentText()
+            ),
             limit=1000,
         )
         self._fill_table(rows)
@@ -137,16 +141,19 @@ class OrdersTab(QtWidgets.QWidget):
         # resumen
         form = QtWidgets.QFormLayout()
         layout.addLayout(form)
-        form.addRow("Documento:", QtWidgets.QLabel(row.get("documento","")))
-        form.addRow("Paciente:", QtWidgets.QLabel(row.get("nombre","")))
-        form.addRow("Código:", QtWidgets.QLabel(row.get("protocolo_codigo","")))
-        form.addRow("Examen:", QtWidgets.QLabel(row.get("protocolo_titulo","")))
-        form.addRow("Tubo:", QtWidgets.QLabel(row.get("tubo","")))
-        form.addRow("Tubo muestra:", QtWidgets.QLabel(row.get("tubo_muestra","")))
-        form.addRow("Fecha/Hora:", QtWidgets.QLabel(f"{row.get('fecha','')} {row.get('hora','')}"))
-        form.addRow("Estado:", QtWidgets.QLabel(row.get("status","")))
-        form.addRow("Resultó:", QtWidgets.QLabel(row.get("resulted_at","")))
-        form.addRow("Enviado:", QtWidgets.QLabel(row.get("sent_at","")))
+        form.addRow("Documento:", QtWidgets.QLabel(row.get("documento", "")))
+        form.addRow("Paciente:", QtWidgets.QLabel(row.get("nombre", "")))
+        form.addRow("Código:", QtWidgets.QLabel(row.get("protocolo_codigo", "")))
+        form.addRow("Examen:", QtWidgets.QLabel(row.get("protocolo_titulo", "")))
+        form.addRow("Tubo:", QtWidgets.QLabel(row.get("tubo", "")))
+        form.addRow("Tubo muestra:", QtWidgets.QLabel(row.get("tubo_muestra", "")))
+        form.addRow(
+            "Fecha/Hora:",
+            QtWidgets.QLabel(f"{row.get('fecha','')} {row.get('hora','')}"),
+        )
+        form.addRow("Estado:", QtWidgets.QLabel(row.get("status", "")))
+        form.addRow("Resultó:", QtWidgets.QLabel(row.get("resulted_at", "")))
+        form.addRow("Enviado:", QtWidgets.QLabel(row.get("sent_at", "")))
 
         # botones
         btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Close)
@@ -160,7 +167,14 @@ class OrdersTab(QtWidgets.QWidget):
     def _qdate_to_str(self, qd: QDate) -> str:
         return f"{qd.year():04d}-{qd.month():02d}-{qd.day():02d}"
 
-    def _query_orders(self, documento: str | None, date_from: str, date_to: str, status: str | None, limit: int = 1000):
+    def _query_orders(
+        self,
+        documento: str | None,
+        date_from: str,
+        date_to: str,
+        status: str | None,
+        limit: int = 1000,
+    ):
         """Devuelve filas (JOIN patients + exams) filtradas."""
         path = Path(DB_PATH)
         if not path.exists():
@@ -168,7 +182,9 @@ class OrdersTab(QtWidgets.QWidget):
 
         conn = sqlite3.connect(str(path))
         # rows como dict
-        conn.row_factory = lambda c, r: {d[0]: r[i] for i, d in enumerate(c.description)}
+        conn.row_factory = lambda c, r: {
+            d[0]: r[i] for i, d in enumerate(c.description)
+        }
         cur = conn.cursor()
 
         wh = []

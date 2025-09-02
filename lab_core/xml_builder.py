@@ -1,12 +1,15 @@
 # lab_core/xml_builder.py
 from __future__ import annotations
+
 import sqlite3
-from typing import Optional, Iterable, Mapping, Tuple, List
+from collections.abc import Iterable, Mapping
+from xml.dom import minidom
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.sax.saxutils import escape
-from xml.dom import minidom
+
 from lab_core.db import code_map_lookup  # mapeo analizador -> cliente
-from .transform import to_yyyymmdd, build_xml_log
+
+from .transform import to_yyyymmdd
 
 
 def _pretty_xml(elem: Element) -> str:
@@ -14,12 +17,14 @@ def _pretty_xml(elem: Element) -> str:
     parsed = minidom.parseString(rough)
     return parsed.toprettyxml(indent="  ", encoding="utf-8").decode("utf-8")
 
+
 def _compose_fecha(date_str: str, time_str: str) -> str:
     date_str = (date_str or "").strip()
     time_str = (time_str or "").strip()
     if date_str and time_str:
         return f"{date_str} {time_str}"
     return date_str or time_str or ""
+
 
 def build_log_envio_xml_single(
     idexamen: str | int | None,
@@ -53,9 +58,11 @@ def build_log_envio_xml_single(
     SubElement(root, "valor_adicional").text = valor_adicional or ""
     return _pretty_xml(root)
 
+
 # --------------------------------------------------------------------
 # High-level: leer BD (hl7_results + hl7_obx_results) y cruzar con órdenes
 # --------------------------------------------------------------------
+
 
 def resolve_exam_for_result(
     conn: sqlite3.Connection,
@@ -63,7 +70,7 @@ def resolve_exam_for_result(
     exam_code: str | None,
     exam_title: str | None,
     exam_date: str | None,
-) -> Optional[sqlite3.Row]:
+) -> sqlite3.Row | None:
     """
     Intenta encontrar el examen (orden) en tu tabla de órdenes (asumo 'exams'):
     1) por paciente + protocolo_codigo (match exacto con exam_code)
@@ -76,42 +83,51 @@ def resolve_exam_for_result(
 
     # 1) match por código
     if patient_id and exam_code:
-        cur.execute("""
+        cur.execute(
+            """
             SELECT *
             FROM exams
             WHERE paciente_doc = ?
               AND protocolo_codigo = ?
             ORDER BY fecha DESC, hora DESC
             LIMIT 1
-        """, (patient_id, exam_code))
+        """,
+            (patient_id, exam_code),
+        )
         row = cur.fetchone()
-        if row: 
+        if row:
             return row
 
     # 2) match por título
     if patient_id and exam_title:
-        cur.execute("""
+        cur.execute(
+            """
             SELECT *
             FROM exams
             WHERE paciente_doc = ?
               AND UPPER(protocolo_titulo) LIKE UPPER(?)
             ORDER BY fecha DESC, hora DESC
             LIMIT 1
-        """, (patient_id, f"%{exam_title}%"))
+        """,
+            (patient_id, f"%{exam_title}%"),
+        )
         row = cur.fetchone()
         if row:
             return row
 
     # 3) por proximidad de fecha (±2 días)
     if patient_id and exam_date:
-        cur.execute("""
+        cur.execute(
+            """
             SELECT *
             FROM exams
             WHERE paciente_doc = ?
               AND fecha BETWEEN date(?, '-2 day') AND date(?, '+2 day')
             ORDER BY ABS(julianday(fecha) - julianday(?)) ASC, hora DESC
             LIMIT 1
-        """, (patient_id, exam_date, exam_date, exam_date))
+        """,
+            (patient_id, exam_date, exam_date, exam_date),
+        )
         row = cur.fetchone()
         if row:
             return row
@@ -119,17 +135,18 @@ def resolve_exam_for_result(
     # Nada encontrado
     return None
 
+
 def build_log_envio_for_result(
     conn: sqlite3.Connection,
     result_id: int,
-) -> List[Tuple[int, str]]:
+) -> list[tuple[int, str]]:
     """
     Construye una lista de (obx_row_id, xml_string) para cada OBX del resultado indicado.
     Usa hl7_results + hl7_obx_results, cruza con 'exams' y aplica mapeo (code_map).
     """
 
     # ----------------- helpers internos -----------------
-    def _normalize_date_if_compact(d: Optional[str]) -> Optional[str]:
+    def _normalize_date_if_compact(d: str | None) -> str | None:
         """'YYYYMMDD...' -> 'YYYY-MM-DD' (si ya tiene '-', se deja igual)."""
         if not d:
             return d
@@ -141,7 +158,7 @@ def build_log_envio_for_result(
             return f"{digits[0:4]}-{digits[4:6]}-{digits[6:8]}"
         return s
 
-    def _hl7_ts_to_datetime_str(s: Optional[str]) -> str:
+    def _hl7_ts_to_datetime_str(s: str | None) -> str:
         """
         Convierte HL7 TS (YYYYMMDD[HH[MM[SS]]]) o ISO a 'YYYY-MM-DD HH:MM:SS'.
         Si no se puede, devuelve ''.
@@ -152,6 +169,7 @@ def build_log_envio_for_result(
         # Intento ISO
         try:
             from datetime import datetime
+
             ts = datetime.fromisoformat(raw.replace("Z", "+00:00"))
             return f"{ts.date().isoformat()} {ts.time().strftime('%H:%M:%S')}"
         except Exception:
@@ -166,9 +184,13 @@ def build_log_envio_for_result(
             return f"{yyyy}-{mm}-{dd} {hh}:{mi}:{ss}"
         return ""
 
-    def _resolve_exam(cur: sqlite3.Cursor, patient_id: Optional[str],
-                      exam_code: Optional[str], exam_title: Optional[str],
-                      exam_date: Optional[str]) -> Optional[sqlite3.Row]:
+    def _resolve_exam(
+        cur: sqlite3.Cursor,
+        patient_id: str | None,
+        exam_code: str | None,
+        exam_title: str | None,
+        exam_date: str | None,
+    ) -> sqlite3.Row | None:
         """
         Busca en 'exams' por:
           1) paciente + protocolo_codigo
@@ -177,23 +199,29 @@ def build_log_envio_for_result(
         """
         # 1) por código
         if patient_id and exam_code:
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT * FROM exams
                 WHERE paciente_doc = ? AND protocolo_codigo = ?
                 ORDER BY fecha DESC, hora DESC
                 LIMIT 1
-            """, (patient_id, exam_code))
+            """,
+                (patient_id, exam_code),
+            )
             row = cur.fetchone()
             if row:
                 return row
         # 2) por título
         if patient_id and exam_title:
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT * FROM exams
                 WHERE paciente_doc = ? AND UPPER(protocolo_titulo) LIKE UPPER(?)
                 ORDER BY fecha DESC, hora DESC
                 LIMIT 1
-            """, (patient_id, f"%{exam_title}%"))
+            """,
+                (patient_id, f"%{exam_title}%"),
+            )
             row = cur.fetchone()
             if row:
                 return row
@@ -201,14 +229,17 @@ def build_log_envio_for_result(
         if patient_id and exam_date:
             d = _normalize_date_if_compact(exam_date)
             if d:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT *
                     FROM exams
                     WHERE paciente_doc = ?
                       AND fecha BETWEEN date(?, '-2 day') AND date(?, '+2 day')
                     ORDER BY ABS(julianday(fecha) - julianday(?)) ASC, hora DESC
                     LIMIT 1
-                """, (patient_id, d, d, d))
+                """,
+                    (patient_id, d, d, d),
+                )
                 row = cur.fetchone()
                 if row:
                     return row
@@ -217,11 +248,14 @@ def build_log_envio_for_result(
     # ----------------- cabecera del resultado -----------------
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         SELECT id, analyzer_name, patient_id, patient_name, exam_code, exam_title, exam_date, exam_time
         FROM hl7_results
         WHERE id = ?
-    """, (result_id,))
+    """,
+        (result_id,),
+    )
     hdr = cur.fetchone()
     if not hdr:
         return []
@@ -238,15 +272,18 @@ def build_log_envio_for_result(
     exam_row = _resolve_exam(cur, patient_id, exam_code, exam_title, exam_date)
 
     # ----------------- cargar OBX -----------------
-    cur.execute("""
+    cur.execute(
+        """
         SELECT id, code, text, value, units, ref_range, flags, obs_dt
         FROM hl7_obx_results
         WHERE result_id = ?
         ORDER BY id
-    """, (result_id,))
+    """,
+        (result_id,),
+    )
     obx_rows = cur.fetchall()
 
-    out: List[Tuple[int, str]] = []
+    out: list[tuple[int, str]] = []
 
     for obx in obx_rows:
         obx_code = (obx["code"] or "").strip()
@@ -263,24 +300,29 @@ def build_log_envio_for_result(
             analyzer_name=analyzer,
             obr_code=exam_code,
             obx_code=obx_code,
-            obx_text=obx_text
+            obx_text=obx_text,
         )
 
         # Si aún no hay orden resuelta y tenemos client_code, reintenta con ese código
         exam_effective = exam_row
         if not exam_effective and patient_id and client_code:
             cur2 = conn.cursor()
-            cur2.execute("""
+            cur2.execute(
+                """
                 SELECT * FROM exams
                 WHERE paciente_doc = ? AND protocolo_codigo = ?
                 ORDER BY fecha DESC, hora DESC
                 LIMIT 1
-            """, (patient_id, client_code))
+            """,
+                (patient_id, client_code),
+            )
             exam_effective = cur2.fetchone()
 
         # -------- campos para el XML --------
-        idexamen = (exam_effective["id"] if exam_effective else None)
-        paciente = patient_id or (exam_effective["paciente_doc"] if exam_effective else "")
+        idexamen = exam_effective["id"] if exam_effective else None
+        paciente = patient_id or (
+            exam_effective["paciente_doc"] if exam_effective else ""
+        )
         # Texto preferente: OBX.text/OBX.code; si faltara, usa título del mapeo
         texto = obx_text or obx_code or (client_title or "")
         valor_cualitativo = obx_value
@@ -311,8 +353,8 @@ def build_log_envio_for_result_range(
     conn: sqlite3.Connection,
     date_from: str,
     date_to: str,
-    analyzer: Optional[str] = None,
-) -> List[Tuple[int, int, str]]:
+    analyzer: str | None = None,
+) -> list[tuple[int, int, str]]:
     """
     Genera XML para todos los resultados en un rango de fechas (por hl7_results.exam_date o received_at).
     Devuelve lista de (result_id, obx_id, xml).
@@ -332,7 +374,7 @@ def build_log_envio_for_result_range(
     cur.execute(sql, params)
     results = [r["id"] for r in cur.fetchall()]
 
-    out: List[Tuple[int, int, str]] = []
+    out: list[tuple[int, int, str]] = []
     for rid in results:
         pairs = build_log_envio_for_result(conn, rid)
         for obx_id, xml in pairs:
@@ -352,7 +394,9 @@ def _e(text: str) -> str:
     return escape(_val(text), {'"': "&quot;", "'": "&apos;"})
 
 
-def build_result_xml_multi(exam_row: Mapping, patient_row: Mapping, obx_rows: Iterable[Mapping]) -> str:
+def build_result_xml_multi(
+    exam_row: Mapping, patient_row: Mapping, obx_rows: Iterable[Mapping]
+) -> str:
     """
     Construye un XML de resultado con múltiples analitos (OBX).
     - exam_row: fila de 'exams' (dict-like)
@@ -365,7 +409,7 @@ def build_result_xml_multi(exam_row: Mapping, patient_row: Mapping, obx_rows: It
         code = r.get("client_code") or r.get("analyzer_code") or ""
         text = r.get("client_text") or r.get("analyzer_text") or ""
         analitos_xml.append(
-f"""    <analito>
+            f"""    <analito>
       <codigo>{_e(code)}</codigo>
       <descripcion>{_e(text)}</descripcion>
       <valor>{_e(r.get('value',''))}</valor>
@@ -400,6 +444,8 @@ f"""    <analito>
     return xml
 
 
-def build_result_xml_single(exam_row: Mapping, patient_row: Mapping, obx_row: Mapping) -> str:
+def build_result_xml_single(
+    exam_row: Mapping, patient_row: Mapping, obx_row: Mapping
+) -> str:
     """Conveniencia: XML de un solo analito."""
     return build_result_xml_multi(exam_row, patient_row, [obx_row])

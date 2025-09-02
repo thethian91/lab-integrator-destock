@@ -2,6 +2,7 @@ from lab_core.db import get_conn
 from lab_core.results_store import attach_result_by_id, mark_sent
 from lab_core.xml_builder import build_result_xml
 
+
 def get_row_dicts(exam_id: int, db_path="data/labintegrador.db"):
     conn = get_conn(db_path)
     conn.row_factory = lambda c, r: {d[0]: r[i] for i, d in enumerate(c.description)}
@@ -9,11 +10,13 @@ def get_row_dicts(exam_id: int, db_path="data/labintegrador.db"):
     cur.execute("SELECT * FROM exams WHERE id=?", (exam_id,))
     exam = cur.fetchone()
     if not exam:
-        conn.close(); raise SystemExit(f"Exam {exam_id} no existe.")
+        conn.close()
+        raise SystemExit(f"Exam {exam_id} no existe.")
     cur.execute("SELECT * FROM patients WHERE documento=?", (exam["paciente_doc"],))
     patient = cur.fetchone()
     conn.close()
     return exam, patient
+
 
 if __name__ == "__main__":
     exam_id = 288379  # cambia por uno existente en tu DB

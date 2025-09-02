@@ -1,8 +1,13 @@
-import socket, threading, time, logging
+import logging
+import socket
+import threading
+import time
 from pathlib import Path
+
 from PySide6.QtCore import QObject, Signal
 
 VT, FS, CR = b"\x0b", b"\x1c", b"\x0d"
+
 
 class MLLPServer(QObject):
     received = Signal(bytes)
@@ -81,11 +86,13 @@ class MLLPServer(QObject):
             while not self._stop.is_set():
                 try:
                     conn, addr = self._sock.accept()
-                except socket.timeout:
+                except TimeoutError:
                     continue
                 except OSError:
                     break  # socket cerrado
-                threading.Thread(target=self._handle_client, args=(conn, addr), daemon=True).start()
+                threading.Thread(
+                    target=self._handle_client, args=(conn, addr), daemon=True
+                ).start()
 
         except OSError as e:
             # Errno 48/98: puerto en uso
@@ -119,11 +126,18 @@ class MLLPServer(QObject):
                     end = buf.find(FS + CR, start + 1)
                     if end == -1:
                         break
-                    frame = buf[start + 1:end]
-                    buf = buf[end + 2:]
+                    frame = buf[start + 1 : end]
+                    buf = buf[end + 2 :]
                     self.received.emit(frame)
                     self._save_hl7(frame)
-                    ack = VT + b"MSH|^~\\&|LIM|SERVER|||"+ time.strftime("%Y%m%d%H%M%S").encode() + b"||ACK^A01|1|P|2.3\rMSA|AA|1\r" + FS + CR
+                    ack = (
+                        VT
+                        + b"MSH|^~\\&|LIM|SERVER|||"
+                        + time.strftime("%Y%m%d%H%M%S").encode()
+                        + b"||ACK^A01|1|P|2.3\rMSA|AA|1\r"
+                        + FS
+                        + CR
+                    )
                     try:
                         conn.sendall(ack)
                     except Exception:

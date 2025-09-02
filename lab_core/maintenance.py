@@ -1,10 +1,11 @@
 # lab_core/maintenance.py
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from shutil import copy2
-from datetime import datetime
 
 DB_PATH = "data/labintegrador.db"
+
 
 def _connect(db_path: str = DB_PATH):
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
@@ -12,10 +13,11 @@ def _connect(db_path: str = DB_PATH):
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
+
 def get_stats(db_path: str = DB_PATH) -> dict:
     """Totales y tamaño del archivo."""
     p = Path(db_path)
-    size_mb = round(p.stat().st_size / (1024*1024), 3) if p.exists() else 0.0
+    size_mb = round(p.stat().st_size / (1024 * 1024), 3) if p.exists() else 0.0
     out = {"size_mb": size_mb, "patients": 0, "exams_total": 0, "by_status": {}}
     if not p.exists():
         return out
@@ -30,6 +32,7 @@ def get_stats(db_path: str = DB_PATH) -> dict:
     conn.close()
     return out
 
+
 def vacuum(db_path: str = DB_PATH):
     """Compacta el archivo y libera espacio."""
     if not Path(db_path).exists():
@@ -38,6 +41,7 @@ def vacuum(db_path: str = DB_PATH):
     with conn:
         conn.execute("VACUUM;")
     conn.close()
+
 
 def backup(out_dir: str = "backups", db_path: str = DB_PATH) -> str:
     """Copia el .db con timestamp a /backups."""
@@ -48,7 +52,10 @@ def backup(out_dir: str = "backups", db_path: str = DB_PATH) -> str:
         copy2(db_path, dst)
     return str(dst)
 
-def purge(date_before: str | None = None, status: str | None = None, db_path: str = DB_PATH) -> int:
+
+def purge(
+    date_before: str | None = None, status: str | None = None, db_path: str = DB_PATH
+) -> int:
     """
     Elimina exámenes por criterios:
     - date_before: borra e.fecha < 'YYYY-MM-DD'
@@ -75,17 +82,20 @@ def purge(date_before: str | None = None, status: str | None = None, db_path: st
         # borrar exams
         cur.execute(f"DELETE FROM exams {where_sql}", params)
         # borrar pacientes sin exams
-        cur.execute("""
+        cur.execute(
+            """
             DELETE FROM patients
             WHERE documento NOT IN (SELECT DISTINCT paciente_doc FROM exams)
-        """)
+        """
+        )
     conn.close()
     return to_delete
 
-def purge_all(db_path: str = DB_PATH) -> tuple[int,int]:
+
+def purge_all(db_path: str = DB_PATH) -> tuple[int, int]:
     """Borra TODO (exams + patients). Devuelve (exams_eliminados, patients_eliminados)."""
     if not Path(db_path).exists():
-        return (0,0)
+        return (0, 0)
     conn = _connect(db_path)
     cur = conn.cursor()
     with conn:
@@ -97,6 +107,7 @@ def purge_all(db_path: str = DB_PATH) -> tuple[int,int]:
         cur.execute("DELETE FROM patients")
     conn.close()
     return (ex, pa)
+
 
 def purge_results():
     conn = sqlite3.connect(DB_PATH)

@@ -1,5 +1,7 @@
-from PySide6 import QtWidgets, QtCore
 from pathlib import Path
+
+from PySide6 import QtWidgets
+
 
 class TestsTab(QtWidgets.QWidget):
     def __init__(self):
@@ -39,10 +41,16 @@ class TestsTab(QtWidgets.QWidget):
     def _send(self):
         p = self.file.text().strip()
         if not p:
-            QtWidgets.QMessageBox.information(self, "Pruebas", "Selecciona primero un archivo HL7.")
+            QtWidgets.QMessageBox.information(
+                self, "Pruebas", "Selecciona primero un archivo HL7."
+            )
             return
         if not Path(p).exists():
-            QtWidgets.QMessageBox.warning(self, "Pruebas", "El archivo seleccionado no existe.")
+            QtWidgets.QMessageBox.warning(
+                self, "Pruebas", "El archivo seleccionado no existe."
+            )
             return
         # TODO: conectar con tu pipeline real
-        self.out.setPlainText("200 OK - Mensaje aceptado\nJSON enviado a SOFIA con ID=12345")
+        self.out.setPlainText(
+            "200 OK - Mensaje aceptado\nJSON enviado a SOFIA con ID=12345"
+        )

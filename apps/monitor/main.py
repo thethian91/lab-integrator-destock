@@ -1,26 +1,26 @@
 import logging
-import os
 from pathlib import Path
 
-from PySide6 import QtWidgets, QtGui, QtCore
-from PySide6.QtCore import Qt, QSettings
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import QGuiApplication
 
 from lab_core.config import read_cfg_safe, write_cfg_safe
-from lab_core.db import ensure_schema, DEFAULT_DB_PATH
+from lab_core.db import DEFAULT_DB_PATH, ensure_schema
 from lab_core.dispatcher import dispatch_cycle  # <- core del poller
 
-from .tabs.monitor_tab import MonitorTab
+from .qt_logging import QtLogEmitter, QtLogHandler
 from .tabs.config_tab import ConfigTab
 from .tabs.logs_tab import LogsTab
-from .tabs.orders_tab import OrdersTab
 from .tabs.maintenance_tab import MaintenanceTab
+from .tabs.monitor_tab import MonitorTab
 from .tabs.orders_results_tab import OrdersResultsTab
-from .qt_logging import QtLogEmitter, QtLogHandler
+from .tabs.orders_tab import OrdersTab
 
 APP_ORG = "Vitronix"
 APP_NAME = "LabIntegratorMonitor"
 RES = Path(__file__).resolve().parents[2] / "resources"
+
 
 # ------------------- Utilidades de configuración -------------------
 def _export_defaults() -> dict:
@@ -32,9 +32,10 @@ def _export_defaults() -> dict:
         "outbox": "outbox_xml",
     }
 
+
 def _read_export_cfg() -> dict:
     cfg = read_cfg_safe() or {}
-    node = (cfg.get("results_export") or {})
+    node = cfg.get("results_export") or {}
     dft = _export_defaults()
     return {
         "enabled": bool(node.get("enabled", dft["enabled"])),
@@ -43,8 +44,10 @@ def _read_export_cfg() -> dict:
         "outbox": str(node.get("outbox", dft["outbox"])),
     }
 
+
 # Asegura esquema de DB al cargar la app (idempotente)
 ensure_schema(DEFAULT_DB_PATH)
+
 
 # ------------------- Worker de despacho (hilo) -------------------
 class DispatchWorker(QtCore.QObject):
@@ -65,6 +68,7 @@ class DispatchWorker(QtCore.QObject):
             self.finished.emit(stats)
         except Exception as e:
             self.errored.emit(str(e))
+
 
 # ------------------- Ventana principal -------------------
 class MainWindow(QtWidgets.QMainWindow):
@@ -96,8 +100,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Instancias de pestañas
         self.monitor_tab = MonitorTab(read_cfg_safe, write_cfg_safe)
         self.config_tab = ConfigTab(read_cfg_safe, write_cfg_safe)
-        self.orders_tab = OrdersTab()                   # Órdenes
-        self.orders_results_tab = OrdersResultsTab()    # Resultados
+        self.orders_tab = OrdersTab()  # Órdenes
+        self.orders_results_tab = OrdersResultsTab()  # Resultados
         self.maint_tab = MaintenanceTab()
         self.logs_tab = LogsTab()
 
@@ -105,12 +109,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowIcon(QtGui.QIcon(str(RES / "app.png")))
 
         # Agregar tabs (solo una vez, con iconos)
-        self.tabs.addTab(self.monitor_tab, QtGui.QIcon(str(RES / "monitor.png")), "Monitor")
-        self.tabs.addTab(self.config_tab,  QtGui.QIcon(str(RES / "config.png")),  "Configuración")
-        self.tabs.addTab(self.orders_tab,  QtGui.QIcon(str(RES / "tests.png")),   "Órdenes")
-        self.tabs.addTab(self.orders_results_tab, QtGui.QIcon(str(RES / "tests.png")), "Resultados")
-        self.tabs.addTab(self.maint_tab,   QtGui.QIcon(str(RES / "tests.png")),   "Mantenimiento")
-        self.tabs.addTab(self.logs_tab,    QtGui.QIcon(str(RES / "logs.png")),    "Logs")
+        self.tabs.addTab(
+            self.monitor_tab, QtGui.QIcon(str(RES / "monitor.png")), "Monitor"
+        )
+        self.tabs.addTab(
+            self.config_tab, QtGui.QIcon(str(RES / "config.png")), "Configuración"
+        )
+        self.tabs.addTab(
+            self.orders_tab, QtGui.QIcon(str(RES / "tests.png")), "Órdenes"
+        )
+        self.tabs.addTab(
+            self.orders_results_tab, QtGui.QIcon(str(RES / "tests.png")), "Resultados"
+        )
+        self.tabs.addTab(
+            self.maint_tab, QtGui.QIcon(str(RES / "tests.png")), "Mantenimiento"
+        )
+        self.tabs.addTab(self.logs_tab, QtGui.QIcon(str(RES / "logs.png")), "Logs")
 
         # Status de exportación en la barra de estado
         self._xml_status = QtWidgets.QLabel("XML: idle")
@@ -137,7 +151,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log_emitter = QtLogEmitter()
         self.log_emitter.log.connect(self.logs_tab.append_log)
         handler = QtLogHandler(self.log_emitter)
-        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        )
         handler.setLevel(logging.DEBUG)
         root = logging.getLogger()
         root.setLevel(logging.DEBUG)
@@ -175,7 +191,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self._dispatch_timer.setInterval(self._export_interval_ms)
             if not self._dispatch_timer.isActive():
                 self._dispatch_timer.start()
-            self._xml_status.setText(f"XML: enabled • every {self._export_interval_ms} ms")
+            self._xml_status.setText(
+                f"XML: enabled • every {self._export_interval_ms} ms"
+            )
         else:
             if self._dispatch_timer.isActive():
                 self._dispatch_timer.stop()
@@ -208,9 +226,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # hilo efímero por ciclo
         self._dispatch_thread = QtCore.QThread(self)
         self._dispatch_worker = DispatchWorker(
-            DEFAULT_DB_PATH,
-            self._export_outbox,
-            self._export_batch_size
+            DEFAULT_DB_PATH, self._export_outbox, self._export_batch_size
         )
         self._dispatch_worker.moveToThread(self._dispatch_thread)
 
@@ -240,9 +256,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self._xml_status.setText(f"XML: error: {msg[:60]}")
         self._dispatch_running = False
 
+
 # ------------------- bootstrap -------------------
 def main():
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon(str(RES / "app.png")))
     app.setOrganizationName(APP_ORG)
@@ -250,6 +268,7 @@ def main():
     win = MainWindow()
     win.show()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

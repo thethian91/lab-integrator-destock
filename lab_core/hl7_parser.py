@@ -1,17 +1,26 @@
-import yaml
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
+
+import yaml
 
 # ---------------------------
 # Utilidades HL7
 # ---------------------------
 
-def split_segments(hl7_text: str) -> List[List[str]]:
+
+def split_segments(hl7_text: str) -> list[list[str]]:
     lines = [ln.strip() for ln in hl7_text.splitlines() if ln.strip()]
     segs = [ln.split("|") for ln in lines]
     return segs
 
-def get_field(segs: List[List[str]], seg_name: str, field_idx: int, comp_idx: Optional[int], first_only=True) -> Optional[str]:
+
+def get_field(
+    segs: list[list[str]],
+    seg_name: str,
+    field_idx: int,
+    comp_idx: int | None,
+    first_only=True,
+) -> str | None:
     """
     seg_name: 'MSH','PID','OBR','OBX'
     field_idx: N (1-based HL7 field index)
@@ -40,14 +49,15 @@ def get_field(segs: List[List[str]], seg_name: str, field_idx: int, comp_idx: Op
         if comp_idx is not None:
             comps = val.split("^")
             if 1 <= comp_idx <= len(comps):
-                return comps[comp_idx-1].strip() or None
+                return comps[comp_idx - 1].strip() or None
             else:
                 continue
         return (val or "").strip() or None
 
     return None
 
-def parse_path(segs: List[List[str]], path: str) -> Optional[str]:
+
+def parse_path(segs: list[list[str]], path: str) -> str | None:
     """
     Path estilo 'OBX-8.2' o 'PID-3.2' o 'OBX-5'
     """
@@ -67,7 +77,8 @@ def parse_path(segs: List[List[str]], path: str) -> Optional[str]:
     except Exception:
         return None
 
-def first_non_empty(values: List[str], segs: List[List[str]]) -> Optional[str]:
+
+def first_non_empty(values: list[str], segs: list[list[str]]) -> str | None:
     """
     Ejecuta rutas en orden y devuelve la primera no vacía.
     """
@@ -76,6 +87,7 @@ def first_non_empty(values: List[str], segs: List[List[str]]) -> Optional[str]:
         if out:
             return out
     return None
+
 
 def _nte_find_by_label(segs, wanted_label: str) -> str | None:
     """
@@ -97,10 +109,12 @@ def _nte_find_by_label(segs, wanted_label: str) -> str | None:
             return nte4.strip() or None
     return None
 
-# --- parche ligero a parse_path para soportar paths especiales ---
-_NTE_LABEL_RE = re.compile(r'^NTE\[label=(?P<label>[A-Za-z0-9 _\-\#]+)\]$')
 
-def parse_path(segs: List[List[str]], path: str) -> Optional[str]:
+# --- parche ligero a parse_path para soportar paths especiales ---
+_NTE_LABEL_RE = re.compile(r"^NTE\[label=(?P<label>[A-Za-z0-9 _\-\#]+)\]$")
+
+
+def parse_path(segs: list[list[str]], path: str) -> str | None:
     """
     Soporta:
       - 'SEG-<field>'            (ej: 'OBX-5')
@@ -127,11 +141,13 @@ def parse_path(segs: List[List[str]], path: str) -> Optional[str]:
     except Exception:
         return None
 
+
 # ---------------------------
 # Selección de perfil
 # ---------------------------
 
-def field_contains(segs: List[List[str]], expr: str) -> bool:
+
+def field_contains(segs: list[list[str]], expr: str) -> bool:
     """
     expr: 'MSH-3 contains QIAnalyzer' -> verifica si el valor contiene el substring (case-sensitive)
     """
@@ -144,7 +160,10 @@ def field_contains(segs: List[List[str]], expr: str) -> bool:
     except Exception:
         return False
 
-def pick_profile(cfg: Dict[str, Any], segs: List[List[str]]) -> Optional[Dict[str, Any]]:
+
+def pick_profile(
+    cfg: dict[str, Any], segs: list[list[str]]
+) -> dict[str, Any] | None:
     defaults = cfg.get("defaults", {})
     profiles = cfg.get("profiles", {})
     for name, prof in profiles.items():
@@ -152,18 +171,22 @@ def pick_profile(cfg: Dict[str, Any], segs: List[List[str]]) -> Optional[Dict[st
         if any_of and any(field_contains(segs, expr) for expr in any_of):
             # Combina defaults con perfil (sin mutar)
             merged = {
-                "separators": defaults.get("separators", {"field": "|", "component": "^"}),
+                "separators": defaults.get(
+                    "separators", {"field": "|", "component": "^"}
+                ),
                 **{k: v for k, v in prof.items() if k != "match"},
             }
             merged["_name"] = name
             return merged
     return None
 
+
 # ---------------------------
 # Parser principal
 # ---------------------------
 
-def parse_hl7_configurable(hl7_text: str, cfg: Dict[str, Any]) -> Dict[str, Any]:
+
+def parse_hl7_configurable(hl7_text: str, cfg: dict[str, Any]) -> dict[str, Any]:
     segs = split_segments(hl7_text)
     prof = pick_profile(cfg, segs)
     if not prof:
@@ -204,8 +227,9 @@ def parse_hl7_configurable(hl7_text: str, cfg: Dict[str, Any]) -> Dict[str, Any]
     for seg in segs:
         if not seg or seg[0].upper() != "OBX":
             continue
+
         # Construimos un “mini parser” para este OBX específico
-        def p_local(path: str) -> Optional[str]:
+        def p_local(path: str) -> str | None:
             # Fuerza a usar el primer OBX coincidente de 'segs'; necesitamos sólo este 'seg'
             # Reutilizamos parse_path pero sobre el mismo 'seg' aislado:
             try:
@@ -225,14 +249,14 @@ def parse_hl7_configurable(hl7_text: str, cfg: Dict[str, Any]) -> Dict[str, Any]
                 if c_idx is not None:
                     comps = val.split("^")
                     if 1 <= c_idx <= len(comps):
-                        val = comps[c_idx-1]
+                        val = comps[c_idx - 1]
                     else:
                         val = ""
                 return (val or "").strip() or None
             except Exception:
                 return None
 
-        def take(paths_or_str: Any) -> Optional[str]:
+        def take(paths_or_str: Any) -> str | None:
             if not paths_or_str:
                 return None
             paths = paths_or_str if isinstance(paths_or_str, list) else [paths_or_str]
@@ -255,29 +279,35 @@ def parse_hl7_configurable(hl7_text: str, cfg: Dict[str, Any]) -> Dict[str, Any]
         if text and norm.get("text_upper"):
             text = text.upper()
 
-        obx_list.append({
-            "code": code,
-            "text": text,
-            "value": value,
-            "units": units,
-            "ref_range": ref_range,
-            "status": status,
-            "when": when,
-            "raw": "|".join(seg),  # trazabilidad
-        })
+        obx_list.append(
+            {
+                "code": code,
+                "text": text,
+                "value": value,
+                "units": units,
+                "ref_range": ref_range,
+                "status": status,
+                "when": when,
+                "raw": "|".join(seg),  # trazabilidad
+            }
+        )
 
     return {
         "profile": prof.get("_name"),
         "patient_id": patient_id,
         "exam_code": exam_code,
-        "exam_title": exam_title.upper() if exam_title and norm.get("text_upper") else exam_title,
+        "exam_title": (
+            exam_title.upper() if exam_title and norm.get("text_upper") else exam_title
+        ),
         "obx_list": obx_list,
     }
+
 
 # ---------------------------
 # Cargador de YAML
 # ---------------------------
 
-def load_hl7_map_yaml(path: str) -> Dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
+
+def load_hl7_map_yaml(path: str) -> dict[str, Any]:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)

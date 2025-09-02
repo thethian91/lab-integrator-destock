@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import sqlite3
-from pathlib import Path
 
-from PySide6 import QtWidgets, QtCore, QtGui
+from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QDate, Qt
 
 from lab_core.db import get_conn  # reutilizamos tu helper
@@ -116,12 +114,14 @@ class OrdersResultsTab(QtWidgets.QWidget):
         conn = get_conn(DB_PATH)
         cur = conn.cursor()
         # analyzers desde hl7_results
-        cur.execute("""
+        cur.execute(
+            """
             SELECT DISTINCT analyzer_name
             FROM hl7_results
             WHERE IFNULL(analyzer_name,'') <> ''
             ORDER BY analyzer_name
-        """)
+        """
+        )
         for r in cur.fetchall():
             self.cmb_analyzer.addItem(r[0], r[0])
         conn.close()
@@ -168,10 +168,14 @@ class OrdersResultsTab(QtWidgets.QWidget):
             sql += " AND UPPER(r.patient_name) LIKE UPPER(?)"
             params.append(f"%{name}%")
         if date_from:
-            sql += " AND COALESCE(NULLIF(r.exam_date,''), substr(r.received_at,1,10)) >= ?"
+            sql += (
+                " AND COALESCE(NULLIF(r.exam_date,''), substr(r.received_at,1,10)) >= ?"
+            )
             params.append(date_from)
         if date_to:
-            sql += " AND COALESCE(NULLIF(r.exam_date,''), substr(r.received_at,1,10)) <= ?"
+            sql += (
+                " AND COALESCE(NULLIF(r.exam_date,''), substr(r.received_at,1,10)) <= ?"
+            )
             params.append(date_to)
 
         sql += " ORDER BY fecha_ref DESC, r.id DESC LIMIT 1000"
@@ -217,7 +221,8 @@ class OrdersResultsTab(QtWidgets.QWidget):
         conn = get_conn(DB_PATH)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT
                 code,
                 text,
@@ -229,14 +234,18 @@ class OrdersResultsTab(QtWidgets.QWidget):
             FROM hl7_obx_results
             WHERE result_id = ?
             ORDER BY id
-        """, (result_id,))
+        """,
+            (result_id,),
+        )
         rows = [dict(r) for r in cur.fetchall()]
         conn.close()
         return rows
 
     def _show_obx_dialog(self, header: dict, obx_rows: list[dict]):
         dlg = QtWidgets.QDialog(self)
-        dlg.setWindowTitle(f"Detalle resultado #{header.get('id')} — {header.get('patient_name')}")
+        dlg.setWindowTitle(
+            f"Detalle resultado #{header.get('id')} — {header.get('patient_name')}"
+        )
         dlg.resize(820, 480)
         v = QtWidgets.QVBoxLayout(dlg)
 
@@ -252,7 +261,17 @@ class OrdersResultsTab(QtWidgets.QWidget):
 
         # Tabla OBX
         tbl = QtWidgets.QTableWidget(0, 7)
-        tbl.setHorizontalHeaderLabels(["Código", "Texto", "Valor", "Unidades", "Rango Ref.", "Flags", "Fecha/Hora"])
+        tbl.setHorizontalHeaderLabels(
+            [
+                "Código",
+                "Texto",
+                "Valor",
+                "Unidades",
+                "Rango Ref.",
+                "Flags",
+                "Fecha/Hora",
+            ]
+        )
         tbl.verticalHeader().setVisible(False)
         tbl.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         tbl.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)

@@ -1,8 +1,9 @@
 # db_obx_upsert.py
-from typing import Dict, Any
-from sqlalchemy import create_engine, Table, Column, Integer, Text, MetaData
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from typing import Any
+
+from sqlalchemy import Column, Integer, MetaData, Table, Text, create_engine
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 # Ajusta tu URL de conexión:
 # SQLite: 'sqlite:///lab.db'
@@ -13,7 +14,8 @@ engine = create_engine(ENGINE_URL, future=True)
 md = MetaData()
 
 hl7_obx_results = Table(
-    "hl7_obx_results", md,
+    "hl7_obx_results",
+    md,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("message_uid", Text, nullable=False),
     Column("obx_index", Integer, nullable=False),
@@ -30,28 +32,31 @@ hl7_obx_results = Table(
     Column("raw_segment", Text),
 )
 
-def upsert_obx_rows(message_uid: str, parsed: Dict[str, Any]):
+
+def upsert_obx_rows(message_uid: str, parsed: dict[str, Any]):
     """
     parsed es el dict que devuelve parse_hl7_configurable(...)
     Inserta/actualiza cada OBX con clave única (message_uid, obx_index).
     """
     rows = []
     for idx, obx in enumerate(parsed.get("obx_list", [])):
-        rows.append({
-            "message_uid": message_uid,
-            "obx_index": idx,
-            "patient_id": parsed.get("patient_id"),
-            "exam_code": parsed.get("exam_code"),
-            "exam_title": parsed.get("exam_title"),
-            "code": obx.get("code"),
-            "text": obx.get("text"),
-            "value": obx.get("value"),
-            "units": obx.get("units"),
-            "ref_range": obx.get("ref_range"),
-            "status": obx.get("status"),
-            "when_ts": obx.get("when"),
-            "raw_segment": obx.get("raw"),
-        })
+        rows.append(
+            {
+                "message_uid": message_uid,
+                "obx_index": idx,
+                "patient_id": parsed.get("patient_id"),
+                "exam_code": parsed.get("exam_code"),
+                "exam_title": parsed.get("exam_title"),
+                "code": obx.get("code"),
+                "text": obx.get("text"),
+                "value": obx.get("value"),
+                "units": obx.get("units"),
+                "ref_range": obx.get("ref_range"),
+                "status": obx.get("status"),
+                "when_ts": obx.get("when"),
+                "raw_segment": obx.get("raw"),
+            }
+        )
 
     if not rows:
         return 0

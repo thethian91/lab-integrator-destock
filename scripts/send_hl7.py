@@ -1,5 +1,7 @@
+import argparse
+import pathlib
+import socket
 
-import argparse, socket, pathlib
 
 def main():
     p = argparse.ArgumentParser(description="Send a file over TCP (e.g., HL7)")
@@ -12,6 +14,7 @@ def main():
     with socket.create_connection((args.host, args.port)) as s:
         s.sendall(data)
     print(f"Sent {len(data)} bytes to {args.host}:{args.port}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,15 +1,17 @@
 import sqlite3
 from pathlib import Path
 
+
 def migrate_hl7_results():
     db_path = Path("data/labintegrador.db")
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     with sqlite3.connect(db_path) as conn:
         cur = conn.cursor()
 
         # Crear nueva tabla para resultados crudos desde HL7
-        cur.execute("""
+        cur.execute(
+            """
         CREATE TABLE IF NOT EXISTS hl7_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             received_at TEXT NOT NULL,
@@ -33,9 +35,11 @@ def migrate_hl7_results():
             source_file TEXT,
             status TEXT DEFAULT 'RAW' -- RAW | MAPPED | SENT
         )
-        """)
+        """
+        )
 
         conn.commit()
+
 
 if __name__ == "__main__":
     migrate_hl7_results()

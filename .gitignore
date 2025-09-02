@@ -11,6 +11,7 @@ outbox_xml/
 logs/
 data/
 configs/settings.yaml
+data/labintegrador.db
 
 # IDE
 .vscode/

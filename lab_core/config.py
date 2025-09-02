@@ -1,4 +1,7 @@
+from __future__ import annotations
 import os
+from pathlib import Path
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -36,10 +39,6 @@ def write_cfg_safe(cfg: dict) -> bool:
 
 
 # lab_core/config.py
-from __future__ import annotations
-
-from dataclasses import dataclass
-from pathlib import Path
 
 
 @dataclass

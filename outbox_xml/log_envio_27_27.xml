@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<log_envio>
+  <idexamen>288403</idexamen>
+  <paciente>1128406835</paciente>
+  <fecha>2025-08-25 10:24:59</fecha>
+  <texto>PSA TOTAL</texto>
+  <valor_cualitativo>0.7</valor_cualitativo>
+  <valor_referencia>0.00-4.00</valor_referencia>
+  <valor_adicional>ng/mL</valor_adicional>
+</log_envio>

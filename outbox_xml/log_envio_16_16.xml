@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<log_envio>
+  <idexamen>288394</idexamen>
+  <paciente>1017198585</paciente>
+  <fecha>2025-08-25 10:10:17</fecha>
+  <texto>FT3</texto>
+  <valor_cualitativo>5.88</valor_cualitativo>
+  <valor_referencia>3.1-6.8</valor_referencia>
+  <valor_adicional>pmol/L</valor_adicional>
+</log_envio>

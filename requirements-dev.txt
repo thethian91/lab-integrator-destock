@@ -1,0 +1,16 @@
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+
+# Linting y formato
+black>=24.3.0
+flake8>=7.0.0
+isort>=5.13.0
+
+# Tipado estático
+mypy>=1.10.0
+types-PyYAML
+types-requests
+
+# Herramientas útiles
+ipython>=8.20.0

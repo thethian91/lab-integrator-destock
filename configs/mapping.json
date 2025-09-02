@@ -1,0 +1,14 @@
+{
+  "FINECARE": {
+    "16":      { "client_code": "TESTO", "client_text": "Testosterona" },
+    "T4L:412509-55": { "client_code": "T4L", "client_text": "Tiroxina Libre" }
+  },
+  "ICON3": {
+    "RBC":     { "client_code": "RBC", "client_text": "Recuento Eritrocitario" },
+    "HGB":     { "client_code": "HGB", "client_text": "Hemoglobina" },
+    "MCV":     { "client_code": "MCV", "client_text": "Volumen Corpuscular Medio" }
+  },
+  "DEFAULT": {
+    "PSA":     { "client_code": "PSA", "client_text": "Antígeno Específico de Próstata" }
+  }
+}

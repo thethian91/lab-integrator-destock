@@ -1,0 +1,92 @@
+# Separadores por defecto (puedes sobreescribir por perfil si un equipo usa otros)
+defaults:
+  separators:
+    field: "|"
+    component: "^"
+
+# Mapeo por perfil; se selecciona por "match" (expresiones a buscar en MSH o donde elijas)
+profiles:
+  # === Perfil FINECARE (tu caso) ===
+  finecare:
+    match:
+      # Cualquiera que coincida activa el perfil (OR).
+      # Puedes mirar MSH-3 | MSH-4 | MSH-5, etc. Aquí tomo MSH-3 y MSH-4 como ejemplo.
+      any_of:
+        - "MSH-3 contains QIAnalyzer"
+        - "MSH-4 contains FS114"
+        - "MSH-3 contains FS-114"
+    extract:
+      patient_id:
+        - "PID-3.2"     # ^288383^  -> 2º componente
+        - "PID-2.1"     # fallback
+        - "PID-3.1"     # fallback
+      exam_code:
+        - "OBR-4.1"     # si el analizador pone código en OBR-4 CE.1
+      exam_title:
+        - "OBR-4.2"     # CE.2
+        - "OBR-15.1"    # fallback
+      obx:
+        code:
+          - "OBX-8.2"   # fT4^25 -> 25
+          - "OBX-3.1"   # fallback
+        text:
+          - "OBX-8.1"   # fT4^25 -> fT4
+          - "OBX-4.1"   # fallback
+          - "OBX-3.1"   # fallback
+        value: "OBX-5"
+        units: "OBX-6"
+        ref_range: "OBX-7"
+        status: "OBX-11"
+        when: "OBX-14"
+    normalize:
+      text_upper: true
+      patient_id_strip_carets: true
+
+  icon3:
+    match:
+      any_of:
+        - "MSH-3 contains Icon-3"
+        - "MSH-4 contains NI30H"
+        - "MSH-5 contains LIS Application"
+    extract:
+      patient_id:
+        - "OBR-4.5"
+      patient_name:
+        - "NTE[label=Name]"
+      exam_code:
+        - "OBR-4.4"
+      exam_title:
+        - "OBR-18"
+        - "OBR-4.2"
+      # NUEVO: fecha/hora a nivel examen (prueba OBR-9 primero; luego 7/8; si falla usa MSH-7)
+      exam_when:
+        - "OBR-8"
+        - "OBR-9"
+        - "OBR-7"
+        - "MSH-7"
+      obx:
+        # El analito viene como "idx^NAME" en OBX-4
+        code:
+          - "OBX-3.1"
+        text:
+          - "OBX-4.2"
+          - "OBX-3.2"
+          - "OBX-3.1"
+        # Valor: algunos mensajes lo dejan en OBX-6 si OBX-5 está vacío
+        value:
+          - "OBX-5"
+          - "OBX-6"
+        # Unidades: normalmente vienen en OBX-7 (a veces como ^g/L), intenta componente 2 primero
+        units:
+          - "OBX-6.2"      # si el equipo mete unidades “pegadas” al valor (raro)
+          - "OBX-7.2"      # g/L, fL, 10³/μL, etc.
+          - "OBX-7"        # fallback crudo
+        ref_range:
+          - "OBX-7"
+        status:
+          - "OBX-11"
+    normalize:
+      text_upper: true
+      patient_id_strip_carets: true
+
+

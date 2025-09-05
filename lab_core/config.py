@@ -1,10 +1,12 @@
+# lab_core/config.py
 from __future__ import annotations
 import os
 from pathlib import Path
-from dataclasses import dataclass
-from pathlib import Path
-
+from dataclasses import dataclass, field
 import yaml
+
+
+# ---------- utilidades simples para leer/escribir YAML suelto ----------
 
 
 def config_dir() -> Path:
@@ -38,7 +40,7 @@ def write_cfg_safe(cfg: dict) -> bool:
         return False
 
 
-# lab_core/config.py
+# ---------- modelos usados por lab_core.load_settings() ----------
 
 
 @dataclass
@@ -63,37 +65,67 @@ class PathsCfg:
 
 
 @dataclass
+class ExportCfg:
+    """Sección para el guardado de XML/respuestas del pipeline."""
+
+    save_xml: bool = False
+    dir: Path = Path("data/exports")
+
+
+@dataclass
 class Settings:
     api: ApiCfg
     tcp: TcpCfg
     paths: PathsCfg
+    # 👇 Importante: usar default_factory en vez de ExportCfg() para evitar el error
+    export: ExportCfg = field(default_factory=ExportCfg)
+
+
+# ---------- loader principal ----------
 
 
 def _read_yaml(path: Path) -> dict:
-    return yaml.safe_load(path.read_text(encoding="utf-8"))
+    txt = path.read_text(encoding="utf-8")
+    data = yaml.safe_load(txt)
+    return data or {}
 
 
 def load_settings(path: str | Path = "configs/settings.yaml") -> Settings:
     p = Path(path)
     data = _read_yaml(p)
 
+    # --- API ---
+    api_d = data.get("api", {})
     api = ApiCfg(
-        base_url=os.getenv("SNT_BASE_URL", data["api"]["base_url"]),
-        key=os.getenv("SNT_API_KEY", data["api"]["key"]),
-        secret=os.getenv("SNT_API_SECRET", data["api"]["secret"]),
-        timeout=int(os.getenv("SNT_TIMEOUT", data["api"].get("timeout", 20))),
+        base_url=os.getenv("SNT_BASE_URL", api_d.get("base_url", "")),
+        key=os.getenv("SNT_API_KEY", api_d.get("key", "")),
+        secret=os.getenv("SNT_API_SECRET", api_d.get("secret", "")),
+        timeout=int(os.getenv("SNT_TIMEOUT", api_d.get("timeout", 20))),
     )
 
+    # --- TCP ---
+    tcp_d = data.get("tcp", {})
     tcp = TcpCfg(
-        host=os.getenv("TCP_HOST", data["tcp"].get("host", "0.0.0.0")),
-        port=int(os.getenv("TCP_PORT", data["tcp"].get("port", 5002))),
+        host=os.getenv("TCP_HOST", tcp_d.get("host", "0.0.0.0")),
+        port=int(os.getenv("TCP_PORT", tcp_d.get("port", 5002))),
     )
 
-    paths_cfg = data.get("paths", {})
+    # --- PATHS ---
+    paths_d = data.get("paths", {}) or {}
+    file_d = data.get("file", {}) or {}  # fallback para YAML que usa file.inbox_dir
+    inbox_val = paths_d.get("inbox") or file_d.get("inbox_dir", "./inbox")
+
     paths = PathsCfg(
-        inbox=Path(paths_cfg.get("inbox", "./inbox")),
-        outbox_xml=Path(paths_cfg.get("outbox_xml", "./outbox_xml")),
-        logs=Path(paths_cfg.get("logs", "./logs")),
+        inbox=Path(inbox_val),
+        outbox_xml=Path(paths_d.get("outbox_xml", "./outbox_xml")),
+        logs=Path(paths_d.get("logs", "./logs")),
     )
 
-    return Settings(api=api, tcp=tcp, paths=paths)
+    # --- EXPORT (nuevo) ---
+    export_d = data.get("export", {}) or {}
+    export = ExportCfg(
+        save_xml=bool(export_d.get("save_xml", False)),
+        dir=Path(export_d.get("dir", "data/exports")),
+    )
+
+    return Settings(api=api, tcp=tcp, paths=paths, export=export)

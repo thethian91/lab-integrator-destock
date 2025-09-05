@@ -28,3 +28,6 @@ results_export:
   interval_ms: 5000
   batch_size: 200
   outbox: outbox_xml
+export:
+  save_xml: true
+  dir: outbox_xml/exports

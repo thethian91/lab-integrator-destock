@@ -1,12 +1,8 @@
 # runtime
 logs/
-app/storages/inbox/
-app/storages/outbox/
-app/storages/archive/
-app/storages/error/
-app/storages/result_example
 outbox/
 inbox/
+outbox_xml/
 outbox_xml/
 logs/
 data/

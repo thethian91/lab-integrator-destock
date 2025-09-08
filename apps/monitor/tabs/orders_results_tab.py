@@ -10,8 +10,10 @@ from lab_core.db import (
     get_conn,
     mark_obx_error,
     mark_obx_exported,
-)  # helper de conexión
-from lab_core.pipeline import enviar_resultado_item
+)  # helper de conexión (usado por pipeline)
+from lab_core.pipeline import (
+    exportar_examen_concatenado,
+)  # <-- usa el flujo concatenado
 
 DB_PATH = "data/labintegrador.db"
 
@@ -219,7 +221,7 @@ class OrdersResultsTab(QtWidgets.QWidget):
                 r.exam_title,
                 COALESCE(NULLIF(r.exam_date,''), substr(r.received_at,1,10)) AS fecha_ref,
 
-                -- ⬇️ agregado desde OBX (por resultado)
+                -- Estado export calculado por OBX (EXPORTED/ERROR/PENDING)
                 (
                 SELECT
                     CASE
@@ -320,15 +322,11 @@ class OrdersResultsTab(QtWidgets.QWidget):
         self._export_dlg.setMinimumDuration(300)
         self._export_dlg.setWindowModality(Qt.ApplicationModal)
 
-        # Quitar botón Cancelar y deshabilitar botón de cierre de ventana
         try:
             self._export_dlg.setCancelButton(None)  # PySide6: elimina el botón Cancelar
         except Exception:
             self._export_dlg.setCancelButtonText("")  # Fallback
         self._export_dlg.setWindowFlag(Qt.WindowCloseButtonHint, False)
-
-        # IMPORTANTE: NO conectar self._export_dlg.canceled -> _cancel_export_safe
-        # para evitar "cancelaciones fantasmas".
 
         self._export_dlg.setValue(0)
 
@@ -341,18 +339,17 @@ class OrdersResultsTab(QtWidgets.QWidget):
             self._export_cancelled = True
 
     def _process_next_export_item(self):
-        # Si ya no hay elementos (o se marcó cancelado de forma programática), finalizar
+        # Si ya no hay elementos (o se marcó cancelado), finalizar
         if self._export_cancelled or not self._export_queue:
             return self._finish_export_safe()
 
         header = self._export_queue.pop(0)
 
-        # Ejecutar UNA export dentro del hilo principal, con try/except defensivo
+        # Ejecutar UNA export dentro del hilo principal
         status, detail = "ERROR", ""
         try:
-            status, detail = self._export_one_core(
-                header
-            )  # usa tu pipeline y marca OBX
+            # USAR export_fn (concatenado)
+            status, detail = self.export_fn(header)
         except Exception as e:
             status, detail = "ERROR", str(e)
 
@@ -391,7 +388,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
         except Exception:
             pass
 
-        # Como no conectamos 'canceled', sólo mostramos "finalizado"
         QtWidgets.QMessageBox.information(self, "Exportación", "Proceso finalizado.")
 
     def _export_selected_row(self):
@@ -419,7 +415,7 @@ class OrdersResultsTab(QtWidgets.QWidget):
             return
         self._start_export_safe(self._rows)
 
-    ## --------lanzador
+    # =============== Exportación: modo con thread (opcional) ===============
     def _run_export_async(self, rows: list[dict]):
         # Desactivar UI mientras corre
         self.btn_export_one.setEnabled(False)
@@ -439,7 +435,8 @@ class OrdersResultsTab(QtWidgets.QWidget):
 
         # Thread + worker
         self._export_thread = QThread(self)
-        self._export_worker = ExportWorker(rows, self._export_one_core)
+        # USAR export_fn (concatenado)
+        self._export_worker = ExportWorker(rows, self.export_fn)
         self._export_worker.moveToThread(self._export_thread)
 
         # Señales → slots locales
@@ -480,167 +477,16 @@ class OrdersResultsTab(QtWidgets.QWidget):
         # Inicia
         self._export_thread.start()
 
-    ## --------end lanzador
+    # ------------------ Exportación (callback único) ------------------
 
-    def _export_one_core(self, header_row: dict) -> tuple[str, str]:
+    def export_fn(self, header_row: dict) -> tuple[str, str]:
         """
-        Exporta 1 resultado (sin tocar UI).
-        Devuelve (status, detail) donde status ∈ {'EXPORTED','ERROR'}.
+        Recibe el header seleccionado de la tabla (que debe tener 'id'),
+        exporta en modo concatenado y retorna (status, detail)
         """
-        from lab_core.db import get_conn, mark_obx_exported, mark_obx_error
-        from lab_core.pipeline import enviar_resultado_item
-
-        result_id = header_row.get("id")
-        if not result_id:
-            return "ERROR", "ID de resultado inválido."
-
-        obx_rows = self._load_obx(result_id)
-
-        valor, units, ref, txt_extra = "", "", "", ""
-        obx_id_used = None
-        for obx in obx_rows:
-            if (obx.get("value") or "").strip():
-                obx_id_used = obx.get("id")
-                valor = str(obx.get("value"))
-                units = str(obx.get("units") or "")
-                ref = str(obx.get("ref_range") or "")
-                txt_extra = str(obx.get("text") or "")
-                break
-
-        item = {
-            "idexamen": header_row.get("exam_code") or header_row.get("id"),
-            "paciente_doc": header_row.get("patient_id"),
-            "fecha": header_row.get("fecha_ref"),
-            "texto": (header_row.get("exam_title") or "")
-            + (f" — {txt_extra}" if txt_extra else ""),
-            "valor": valor,
-            "ref": ref,
-            "units": units,
-        }
-
-        try:
-            resp_text = enviar_resultado_item(item)  # hace requests.post con timeout
-            if obx_id_used:
-                conn = get_conn(DB_PATH)
-                try:
-                    mark_obx_exported(conn, obx_id_used, "API:SNT")
-                    conn.commit()
-                finally:
-                    conn.close()
-            return "EXPORTED", (resp_text or "")[:500]
-        except Exception as e:
-            if obx_id_used:
-                conn = get_conn(DB_PATH)
-                try:
-                    mark_obx_error(conn, obx_id_used, str(e))
-                    conn.commit()
-                finally:
-                    conn.close()
-            return "ERROR", str(e)
-
-    def _export_one(self, header_row: dict, show_messages: bool = True):
-        """
-        Toma la cabecera (hl7_results) y arma el 'item' para el pipeline usando OBX.
-        Reglas simples:
-          - Toma el primer OBX con valor no vacío como 'valor' principal.
-          - Usa 'units' y 'ref_range' si existen.
-          - 'texto' = exam_title (y si hay texto OBX se concatena).
-        """
-        result_id = header_row.get("id")
-        if not result_id:
-            if show_messages:
-                QtWidgets.QMessageBox.warning(
-                    self, "Exportar", "ID de resultado inválido."
-                )
-            return
-
-        obx_rows = self._load_obx(result_id)
-        valor, units, ref, txt_extra = "", "", "", ""
-
-        obx_id_used = None
-        for obx in obx_rows:
-            if (obx.get("value") or "").strip():
-                obx_id_used = obx.get("id")  # ⬅️ guarda la PK
-                valor = str(obx.get("value"))
-                units = str(obx.get("units") or "")
-                ref = str(obx.get("ref_range") or "")
-                txt_extra = str(obx.get("text") or "")
-                break
-
-        for obx in obx_rows:
-            if (obx.get("value") or "").strip():
-                valor = str(obx.get("value"))
-                units = str(obx.get("units") or "")
-                ref = str(obx.get("ref_range") or "")
-                txt_extra = str(obx.get("text") or "")
-                break
-
-        # construir payload esperado por pipeline
-        item = {
-            "idexamen": header_row.get("exam_code")
-            or header_row.get("id"),  # <- ajusta si tu mapping define otro campo
-            "paciente_doc": header_row.get("patient_id"),
-            "fecha": header_row.get("fecha_ref"),
-            "texto": (header_row.get("exam_title") or "")
-            + (f" — {txt_extra}" if txt_extra else ""),
-            "valor": valor,
-            "ref": ref,
-            "units": units,
-        }
-
-        # Llamar pipeline
-        try:
-            resp_text = enviar_resultado_item(item)
-
-            # Marca SOLO el OBX que exportaste
-            if obx_id_used:
-                conn = get_conn(DB_PATH)
-                try:
-                    mark_obx_exported(conn, obx_id_used, "API:SNT")
-                    conn.commit()
-                finally:
-                    conn.close()
-
-            # marcar exportado en BD
-            self._mark_export_status(result_id, "EXPORTED", resp_text)
-            if show_messages:
-                QtWidgets.QMessageBox.information(
-                    self, "Exportar", f"Exportado OK.\n{resp_text[:250]}"
-                )
-        except Exception as e:
-            if obx_id_used:
-                conn = get_conn(DB_PATH)
-                try:
-                    mark_obx_error(conn, obx_id_used, str(e))
-                    conn.commit()
-                finally:
-                    conn.close()
-            # marcar error en BD con mensaje
-            self._mark_export_status(result_id, "ERROR", str(e))
-            if show_messages:
-                QtWidgets.QMessageBox.critical(
-                    self, "Exportar", f"Error al exportar:\n{e}"
-                )
-        finally:
-            self.refresh()
-
-    def _mark_export_status(self, result_id: int, status: str, detail: str = ""):
-        conn = get_conn(DB_PATH)
-        cur = conn.cursor()
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # Guarda también un breve detalle si tienes columna (si no la tienes, ignora)
-        try:
-            cur.execute(
-                """
-                UPDATE hl7_results
-                SET export_status = ?, exported_at = ?
-                WHERE id = ?
-                """,
-                (status.upper(), now, result_id),
-            )
-            conn.commit()
-        finally:
-            conn.close()
+        exam_id = int(header_row["id"])
+        ok, msg = exportar_examen_concatenado(exam_id)
+        return ("OK" if ok else "ERROR", msg or "")
 
     # ------------------ Detalle OBX ------------------
 
@@ -662,18 +508,16 @@ class OrdersResultsTab(QtWidgets.QWidget):
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT
-                id,
-                code,
-                text,
-                value,
-                units,
-                ref_range,
-                flags,
-                obs_dt
-            FROM hl7_obx_results
-            WHERE result_id = ?
-            ORDER BY id
+            SELECT id
+                 , code
+                 , text
+                 , value
+                 , units
+                 , ref_range
+                 , flags
+              FROM hl7_obx_results
+             WHERE result_id = ?
+            ORDER BY id ASC
         """,
             (result_id,),
         )
@@ -701,9 +545,10 @@ class OrdersResultsTab(QtWidgets.QWidget):
         v.addWidget(info)
 
         # Tabla OBX
-        tbl = QtWidgets.QTableWidget(0, 7)
+        tbl = QtWidgets.QTableWidget(0, 8)
         tbl.setHorizontalHeaderLabels(
             [
+                "Sec.",
                 "Código",
                 "Texto",
                 "Valor",
@@ -721,13 +566,20 @@ class OrdersResultsTab(QtWidgets.QWidget):
 
         tbl.setRowCount(len(obx_rows))
         for i, r in enumerate(obx_rows):
-            tbl.setItem(i, 0, QtWidgets.QTableWidgetItem(str(r.get("code") or "")))
-            tbl.setItem(i, 1, QtWidgets.QTableWidgetItem(str(r.get("text") or "")))
-            tbl.setItem(i, 2, QtWidgets.QTableWidgetItem(str(r.get("value") or "")))
-            tbl.setItem(i, 3, QtWidgets.QTableWidgetItem(str(r.get("units") or "")))
-            tbl.setItem(i, 4, QtWidgets.QTableWidgetItem(str(r.get("ref_range") or "")))
-            tbl.setItem(i, 5, QtWidgets.QTableWidgetItem(str(r.get("flags") or "")))
-            tbl.setItem(i, 6, QtWidgets.QTableWidgetItem(str(r.get("obs_dt") or "")))
+            tbl.setItem(
+                i,
+                0,
+                QtWidgets.QTableWidgetItem(
+                    "" if r.get("seq") is None else str(r.get("seq"))
+                ),
+            )
+            tbl.setItem(i, 1, QtWidgets.QTableWidgetItem(str(r.get("code") or "")))
+            tbl.setItem(i, 2, QtWidgets.QTableWidgetItem(str(r.get("text") or "")))
+            tbl.setItem(i, 3, QtWidgets.QTableWidgetItem(str(r.get("value") or "")))
+            tbl.setItem(i, 4, QtWidgets.QTableWidgetItem(str(r.get("units") or "")))
+            tbl.setItem(i, 5, QtWidgets.QTableWidgetItem(str(r.get("ref_range") or "")))
+            tbl.setItem(i, 6, QtWidgets.QTableWidgetItem(str(r.get("flags") or "")))
+            tbl.setItem(i, 7, QtWidgets.QTableWidgetItem(str(r.get("obs_dt") or "")))
 
         tbl.resizeColumnsToContents()
         v.addWidget(tbl)

@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import json
 import logging
+import sqlite3
 from pathlib import Path
 from datetime import datetime, date
 from collections.abc import Mapping
@@ -14,8 +15,100 @@ from xml.etree.ElementTree import Element, SubElement, tostring
 from lab_core.config import load_settings
 from lab_core.sender import SNTClient
 from lab_core.utils.dates import to_yyyymmdd
+from lab_core.utils.obx_concat import concat_obx_rows
 
 log = logging.getLogger("lab.integrator.pipeline")
+
+
+MAX_RESULT_LEN = 250
+
+
+def exportar_examen_concatenado(result_id: int) -> tuple[bool, str]:
+    """
+    Lee header + OBX de hl7_results/hl7_obx_results,
+    concatena OBX -> 'texto' y envía un único item.
+    Retorna (ok, mensaje).
+    """
+    from lab_core.db import get_conn, mark_obx_exported, mark_obx_error
+
+    try:
+        with get_conn() as conn:
+            conn.row_factory = sqlite3.Row
+
+            # Header principal del examen
+            h = conn.execute(
+                """
+                SELECT id
+                        , patient_id    AS paciente_doc
+                        , patient_name  AS paciente_nombre
+                        , exam_code     AS codigo_examen
+                        , exam_title    AS titulo_examen
+                        , received_at   AS fecha_hora
+                    FROM hl7_results
+                    WHERE id = ?
+            """,
+                (result_id,),
+            ).fetchone()
+
+            if not h:
+                return False, f"Examen {result_id} no existe"
+
+            # Todos los OBX del examen
+            obx_rows = [
+                dict(r)
+                for r in conn.execute(
+                    """
+                SELECT id
+                     , result_id AS obr_id
+                     , id as seq
+                     , code
+                     , text
+                     , value
+                     , units
+                     , ref_range
+                     , flags
+                     , obs_dt
+                  FROM hl7_obx_results
+                 WHERE result_id = ?
+                ORDER BY id ASC
+            """,
+                    (result_id,),
+                ).fetchall()
+            ]
+
+            # Construir concatenado
+            texto_concat = concat_obx_rows(obx_rows, sep=" | ")
+            if MAX_RESULT_LEN and len(texto_concat) > MAX_RESULT_LEN:
+                texto_concat = texto_concat[: MAX_RESULT_LEN - 1] + "…"
+
+            # Armar el item para tu endpoint actual (usa enviar_resultado_item)
+            item = {
+                "idexamen": h["id"],
+                "paciente_doc": h["paciente_doc"],
+                "fecha": str(h["fecha_hora"]).split(" ")[
+                    0
+                ],  # enviar YYYY-MM-DD; adentro ya lo normalizas a YYYYMMDD
+                "texto": texto_concat,  # <- AQUÍ VA TODO
+                "valor": None,  # no usamos cuantitativo individual
+                "ref": None,
+                "units": None,
+            }
+
+            try:
+                resp_text = enviar_resultado_item(item)
+                # marcar OBX como exportados
+                for r in obx_rows:
+                    mark_obx_exported(conn, r["id"])
+                conn.commit()
+                return True, resp_text or "OK"
+            except Exception as e:
+                # marcar ERROR por cada OBX (o podrías tener un estado por header si lo prefieres)
+                for r in obx_rows:
+                    mark_obx_error(conn, r["id"], str(e))
+                conn.commit()
+                return False, f"ERROR: {e}"
+    except Exception as err:
+        log.error(e)
 
 
 # ===================== Helpers de configuración =====================

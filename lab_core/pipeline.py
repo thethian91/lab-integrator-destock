@@ -1,4 +1,3 @@
-# lab_core/pipeline.py
 from __future__ import annotations
 
 import os
@@ -8,107 +7,175 @@ import sqlite3
 from pathlib import Path
 from datetime import datetime, date
 from collections.abc import Mapping
-from typing import Any, Tuple
+from typing import Any
 
 from xml.etree.ElementTree import Element, SubElement, tostring
 
-from lab_core.config import load_settings
+from lab_core.config import load_settings, read_cfg_safe
 from lab_core.sender import SNTClient
 from lab_core.utils.dates import to_yyyymmdd
-from lab_core.utils.obx_concat import concat_obx_rows
+from lab_core.db import get_conn, mark_obx_exported, mark_obx_error
+from lab_core.utils.mapping_json import load_mapping, lookup_client_code
+
 
 log = logging.getLogger("lab.integrator.pipeline")
-
 
 MAX_RESULT_LEN = 250
 
 
 def exportar_examen_concatenado(result_id: int) -> tuple[bool, str]:
     """
-    Lee header + OBX de hl7_results/hl7_obx_results,
-    concatena OBX -> 'texto' y envía un único item.
+    Lee header + OBX de hl7_results/hl7_obx_results y envía:
+      - 1 OBX  -> valor/unidades/rango/flags (resultado “normal”) en 'valor'
+      - 2+ OBX -> concatenado en 'texto' (valor/ref/units en None)
     Retorna (ok, mensaje).
     """
-    from lab_core.db import get_conn, mark_obx_exported, mark_obx_error
-
     try:
         with get_conn() as conn:
             conn.row_factory = sqlite3.Row
 
             # Header principal del examen
-            h = conn.execute(
+            header_data = conn.execute(
                 """
                 SELECT id
-                        , patient_id    AS paciente_doc
-                        , patient_name  AS paciente_nombre
-                        , exam_code     AS codigo_examen
-                        , exam_title    AS titulo_examen
-                        , received_at   AS fecha_hora
-                    FROM hl7_results
-                    WHERE id = ?
-            """,
+                     , analyzer_name
+                     , patient_id    AS paciente_doc
+                     , patient_name  AS paciente_nombre
+                     , exam_code     AS codigo_examen
+                     , exam_title    AS titulo_examen
+                     , received_at   AS fecha_hora
+                  FROM hl7_results
+                 WHERE id = ?
+                """,
                 (result_id,),
             ).fetchone()
 
-            if not h:
+            if not header_data:
                 return False, f"Examen {result_id} no existe"
 
-            # Todos los OBX del examen
+            # Todos los OBX del examen (normalizados a dict)
             obx_rows = [
                 dict(r)
                 for r in conn.execute(
                     """
-                SELECT id
-                     , result_id AS obr_id
-                     , id as seq
-                     , code
-                     , text
-                     , value
-                     , units
-                     , ref_range
-                     , flags
-                     , obs_dt
-                  FROM hl7_obx_results
-                 WHERE result_id = ?
-                ORDER BY id ASC
-            """,
+                    SELECT id        AS id
+                         , result_id AS obr_id
+                         , id        AS seq
+                         , code      AS obx_code
+                         , text      AS obx_name
+                         , value     AS obx_value
+                         , units     AS obx_unit   
+                         , ref_range AS obx_refrange
+                         , flags
+                         , obs_dt
+                      FROM hl7_obx_results
+                     WHERE result_id = ?
+                     ORDER BY id ASC
+                    """,
                     (result_id,),
                 ).fetchall()
             ]
+            total = len(obx_rows)
+            oks = 0
+            errs = 0
+            last_resp: str | None = None
+            id_examen: str | None = None
+            fecha_order: str | None = None
 
-            # Construir concatenado
-            texto_concat = concat_obx_rows(obx_rows, sep=" | ")
-            if MAX_RESULT_LEN and len(texto_concat) > MAX_RESULT_LEN:
-                texto_concat = texto_concat[: MAX_RESULT_LEN - 1] + "…"
+            for item_raw in obx_rows:
 
-            # Armar el item para tu endpoint actual (usa enviar_resultado_item)
-            item = {
-                "idexamen": h["id"],
-                "paciente_doc": h["paciente_doc"],
-                "fecha": str(h["fecha_hora"]).split(" ")[
-                    0
-                ],  # enviar YYYY-MM-DD; adentro ya lo normalizas a YYYYMMDD
-                "texto": texto_concat,  # <- AQUÍ VA TODO
-                "valor": None,  # no usamos cuantitativo individual
-                "ref": None,
-                "units": None,
-            }
+                # get idExamen
+                data, alias_idx = load_mapping("configs/mapping.json")
+                protocolo_code, protocolo_name = lookup_client_code(
+                    data,
+                    alias_idx,
+                    header_data["analyzer_name"],
+                    item_raw.get("obx_name"),
+                )
 
-            try:
-                resp_text = enviar_resultado_item(item)
-                # marcar OBX como exportados
-                for r in obx_rows:
-                    mark_obx_exported(conn, r["id"])
-                conn.commit()
-                return True, resp_text or "OK"
-            except Exception as e:
-                # marcar ERROR por cada OBX (o podrías tener un estado por header si lo prefieres)
-                for r in obx_rows:
-                    mark_obx_error(conn, r["id"], str(e))
-                conn.commit()
-                return False, f"ERROR: {e}"
+                order_info = conn.execute(
+                    ''' 
+                      SELECT id    AS id_examen
+                           , fecha AS fecha_orden
+                        FROM exams 
+                       WHERE paciente_doc = ?
+                         AND protocolo_codigo = ?
+                    ORDER BY fecha DESC 
+                    LIMIT 1
+                ''',
+                    (header_data["paciente_doc"], protocolo_code),
+                ).fetchone()
+
+                if not order_info:
+                    return False, f"Info order no encontrada {result_id}"
+
+                id_examen = order_info[0]
+                fecha_order = str(order_info[1]).split(" ")[0]
+
+                item = {
+                    "idexamen": id_examen,
+                    "paciente_doc": header_data["paciente_doc"],
+                    "fecha": fecha_order,
+                    "texto": (item_raw.get("obx_name") or None),
+                    "valor": (item_raw.get("obx_value") or None),
+                    "ref": (item_raw.get("obx_refrange") or None),
+                    "units": (item_raw.get("obx_unit") or None),
+                }
+                try:
+                    resp_text = enviar_resultado_item(item)
+                    last_resp = resp_text or last_resp
+                    mark_obx_exported(conn, item_raw["id"])
+                    oks += 1
+                except Exception as e:
+                    print(e)
+                    mark_obx_error(conn, item_raw["id"], str(e))
+                    errs += 1
+
+            conn.commit()
+            ok_global = errs == 0
+            resumen = f"OBX enviados: {total} | OK: {oks} | ERROR: {errs}"
+            if last_resp and ok_global:
+                resumen += f" | Última respuesta: {last_resp[:120]}"
+
+            # =======================================================
+            # NEW: notificar examen completo si todo salió bien
+            cfg_raw = read_cfg_safe()  # dict crudo del YAML
+            upd = (cfg_raw.get("api") or {}).get("update_exam") or {}
+            if upd.get("enabled", True):
+                resultado_global = upd.get("resultado_global", "Normal")
+                responsable = upd.get("responsable", "PENDIENTEVALIDAR")
+                notas = upd.get("notas", "Enviado desde integracion")
+
+                client = build_snt_client()
+                # order_info y header_data ya existen en el scope de esta función
+                paciente = header_data["paciente_doc"]
+
+                try:
+                    resp = client.actualizar_examenlab_fecha(
+                        idexamen=id_examen,
+                        paciente=paciente,
+                        fecha=fecha_order,
+                        resultado_global=resultado_global,
+                        responsable=responsable,
+                        notas=notas,
+                    )
+                    print(f"resp: {resp}")
+                    log.info(
+                        "Examen %s marcado como COMPLETADO (respuesta: %s)",
+                        id_examen,
+                        (resp.text[:200] if hasattr(resp, "text") else ""),
+                    )
+                except Exception as e:
+                    log.error(
+                        "Fallo notificando examen completo id=%s: %s", id_examen, e
+                    )
+            # =======================================================
+
+            return ok_global, resumen
+
     except Exception as err:
-        log.error(e)
+        log.error(err)
+        return False, f"ERROR inesperado: {err}"
 
 
 # ===================== Helpers de configuración =====================
@@ -194,14 +261,13 @@ def _build_xml_from_item(
     necesita un formato distinto para el log.
     """
     root = Element("log_envio")
-
     # Mantenemos las claves que tú ya utilizas en item
     pairs = {
         "idexamen": item.get("idexamen", ""),
         "paciente": item.get("paciente_doc", ""),
-        "fecha": fecha_api,  # ya normalizada a YYYYMMDD
+        "fecha": fecha_api,
         "texto": item.get("texto", ""),
-        "valor": item.get("valor", ""),  # lo que llamas 'valor_cualitativo' en la API
+        "valor": item.get("valor", ""),
         "ref": item.get("ref", ""),
         "units": item.get("units", ""),
     }

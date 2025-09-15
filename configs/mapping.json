@@ -1,14 +1,21 @@
 {
-  "FINECARE": {
-    "16":      { "client_code": "TESTO", "client_text": "Testosterona" },
-    "T4L:412509-55": { "client_code": "T4L", "client_text": "Tiroxina Libre" }
-  },
-  "ICON3": {
-    "RBC":     { "client_code": "RBC", "client_text": "Recuento Eritrocitario" },
-    "HGB":     { "client_code": "HGB", "client_text": "Hemoglobina" },
-    "MCV":     { "client_code": "MCV", "client_text": "Volumen Corpuscular Medio" }
-  },
-  "DEFAULT": {
-    "PSA":     { "client_code": "PSA", "client_text": "Antígeno Específico de Próstata" }
+  "version": 1,
+  "updated_at": "2025-09-10T10:05:00-0500",
+  "analyzers": {
+    "FINECARE_FS114": {
+      "aliases": ["FINECARE", "FS114", "Finecare FS114"],
+      "map": {
+        "FPSA": {
+          "client_code": "412509-1",
+          "client_title": "ANTIGENO ESPECIFICO DE PROSTATA"
+        }
+      }
+    },
+    "ICON_3": {
+      "aliases": ["ICON3", "ICON-3", "ICON 3"],
+      "map": {
+        "HGB": { "client_code": "300101-10", "client_title": "Hemoglobina" }
+      }
+    }
   }
 }

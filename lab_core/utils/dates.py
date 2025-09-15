@@ -13,5 +13,5 @@ def to_yyyymmdd(value: str | datetime) -> str:
             return datetime.strptime(s, fmt).strftime("%Y%m%d")
         except ValueError:
             pass
-        digits = "".join(ch for ch in s if ch.isdigit())
-        return digits[:8] if len(digits) >= 8 else digits
+    digits = "".join(ch for ch in s if ch.isdigit())
+    return digits[:8] if len(digits) >= 8 else digits

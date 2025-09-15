@@ -1,0 +1,98 @@
+name: Build Windows Executable
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build_exe:
+    name: Build EXE (PyInstaller)
+    runs-on: windows-latest
+    env:
+      APP_NAME: LabIntegratorMonitor # <- cambia el nombre si quieres
+      ENTRYPOINT: apps/monitor/main.py # <- ajusta si tu main es otro
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip wheel
+          if (Test-Path "requirements.txt") {
+            pip install -r requirements.txt
+          } else {
+            pip install PySide6
+          }
+          pip install "pyinstaller>=6.6,<7" "pywin32>=306" "setuptools>=70"
+
+      - name: Compute version
+        id: ver
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}"
+          if (-not $env:GITHUB_REF_NAME -or -not $ver -or -not ($ver -match '^v')) {
+            $short = (git rev-parse --short HEAD)
+            $date  = Get-Date -Format "yyyy.MM.dd"
+            $ver = "$date-$short"
+          }
+          "VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "Version = $ver"
+
+      - name: Build executable with PyInstaller
+        shell: pwsh
+        run: |
+          if (!(Test-Path $env:ENTRYPOINT)) {
+            Write-Error "No se encontró $env:ENTRYPOINT. Ajusta env:ENTRYPOINT si tu entrypoint es distinto."
+          }
+
+          $iconArg = ""
+          if (Test-Path ".\assets\icons\vitronix.ico") { $iconArg = "--icon .\assets\icons\vitronix.ico" }
+
+          $extraArgs = @()
+          if (Test-Path ".\configs") { $extraArgs += '--add-data "configs;configs"' }
+          if (Test-Path ".\assets")  { $extraArgs += '--add-data "assets;assets"' }
+          if (Test-Path ".\lab_core\resources") { $extraArgs += '--add-data "lab_core/resources;lab_core/resources"' }
+
+          # GUI: --windowed (si necesitas consola para debug, cambia a --console)
+          pyinstaller -y --clean --windowed `
+            --name $env:APP_NAME `
+            --collect-all PySide6 `
+            $iconArg $($extraArgs -join ' ') `
+            $env:ENTRYPOINT
+
+      - name: Stage runtime (bundle)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts\monitor | Out-Null
+          Copy-Item -Recurse -Force dist\$env:APP_NAME\* artifacts\monitor\
+          if (Test-Path ".\configs") { Copy-Item -Recurse -Force .\configs artifacts\monitor\configs }
+          if (Test-Path ".\README.md") { Copy-Item .\README.md artifacts\monitor\ }
+          if (Test-Path ".\LICENSE") { Copy-Item .\LICENSE artifacts\monitor\ }
+          "@VERSION=${{ env.VERSION }}" | Out-File artifacts\monitor\version.txt -Encoding utf8
+
+      - name: Zip EXE bundle
+        shell: pwsh
+        run: |
+          Compress-Archive -Force -Path artifacts\monitor\* -DestinationPath $env:APP_NAME-${{ env.VERSION }}-win64.zip
+          Get-ChildItem -Recurse artifacts
+
+      - name: Upload artifact (EXE bundle)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ env.VERSION }}-win64
+          path: ${{ env.APP_NAME }}-${{ env.VERSION }}-win64.zip
+          retention-days: 14

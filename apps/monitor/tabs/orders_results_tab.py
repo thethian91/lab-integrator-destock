@@ -486,7 +486,7 @@ class OrdersResultsTab(QtWidgets.QWidget):
         """
         exam_id = int(header_row["id"])
         ok, msg = exportar_examen_concatenado(exam_id)
-        return ("OK" if ok else "ERROR", msg or "")
+        return ("OK" if ok else "ERROR", msg or "Exportación por-OBX terminada")
 
     # ------------------ Detalle OBX ------------------
 

@@ -1,583 +1,583 @@
-<?xml version="1.0" encoding="utf-8" ?>
-	<resultado_ws>
-		<respuesta>OK</respuesta>
-		<detalle_respuesta>
-			<paciente documento="12345678">
-				<examen>
-					<id>288379</id>
-					<protocolo_codigo>412509-53</protocolo_codigo>
-					<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-					<tubo>08250465</tubo>
-					<tubo_muestra>08250465-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>09:43:25</hora>
-					<paciente>12345678</paciente>
-					<nombre>pepito perez</nombre>
-					<sexo>M</sexo>
-					<edad>42</edad>
-					<fecha_nacimiento>1983-02-14</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288380</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250465</tubo>
-					<tubo_muestra>08250465-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>09:43:25</hora>
-					<paciente>12345678</paciente>
-					<nombre>pepito perez</nombre>
-					<sexo>M</sexo>
-					<edad>42</edad>
-					<fecha_nacimiento>1983-02-14</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288381</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250465</tubo>
-					<tubo_muestra>08250465-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>09:43:25</hora>
-					<paciente>12345678</paciente>
-					<nombre>pepito perez</nombre>
-					<sexo>M</sexo>
-					<edad>42</edad>
-					<fecha_nacimiento>1983-02-14</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="1016025677">
-				<examen>
-						<id>288382</id>
-						<protocolo_codigo>412509-53</protocolo_codigo>
-						<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-						<tubo>08250466</tubo>
-						<tubo_muestra>08250466-24</tubo_muestra>
-						<fecha>2025-08-25</fecha>
-						<hora>09:56:31</hora>
-						<paciente>1016025677</paciente>
-						<nombre>JHONNATAN ANDREI VELASCO NAVARRETE</nombre>
-						<sexo>M</sexo>
-						<edad>32</edad>
-						<fecha_nacimiento>1993-01-21</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288383</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250466</tubo>
-					<tubo_muestra>08250466-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>09:56:31</hora>
-					<paciente>1016025677</paciente>
-					<nombre>JHONNATAN ANDREI VELASCO NAVARRETE</nombre>
-					<sexo>M</sexo>
-					<edad>32</edad>
-					<fecha_nacimiento>1993-01-21</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288384</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250466</tubo>
-					<tubo_muestra>08250466-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>09:56:31</hora>
-					<paciente>1016025677</paciente>
-					<nombre>JHONNATAN ANDREI VELASCO NAVARRETE</nombre>
-					<sexo>M</sexo>
-					<edad>32</edad>
-					<fecha_nacimiento>1993-01-21</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="1069748258">
-				<examen>
-					<id>288385</id>
-					<protocolo_codigo>412509-53</protocolo_codigo>
-					<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-					<tubo>08250467</tubo>
-					<tubo_muestra>08250467-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:02:30</hora>
-					<paciente>1069748258</paciente>
-					<nombre>MAICOL YULIAN CARDENAS BAQUERO</nombre>
-					<sexo>F</sexo>
-					<edad>69</edad>
-					<fecha_nacimiento>1956-12-06</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288386</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250467</tubo>
-					<tubo_muestra>08250467-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:02:30</hora>
-					<paciente>1069748258</paciente>
-					<nombre>MAICOL YULIAN CARDENAS BAQUERO</nombre>
-					<sexo>F</sexo>
-					<edad>69</edad>
-					<fecha_nacimiento>1956-12-06</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288387</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250467</tubo>
-					<tubo_muestra>08250467-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:02:30</hora>
-					<paciente>1069748258</paciente>
-					<nombre>MAICOL YULIAN CARDENAS BAQUERO</nombre>
-					<sexo>F</sexo>
-					<edad>69</edad>
-					<fecha_nacimiento>1956-12-06</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="79881617">
-				<examen>
-					<id>288388</id>
-					<protocolo_codigo>412509-53</protocolo_codigo>
-					<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-					<tubo>08250468</tubo>
-					<tubo_muestra>08250468-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:05:26</hora>
-					<paciente>79881617</paciente>
-					<nombre>JHON SMITH VARGAS SUAREZ</nombre>
-					<sexo>F</sexo>
-					<edad>40</edad>
-					<fecha_nacimiento>1985-10-23</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288389</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250468</tubo>
-					<tubo_muestra>08250468-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:05:26</hora>
-					<paciente>79881617</paciente>
-					<nombre>JHON SMITH VARGAS SUAREZ</nombre>
-					<sexo>F</sexo>
-					<edad>40</edad>
-					<fecha_nacimiento>1985-10-23</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288390</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250468</tubo>
-					<tubo_muestra>08250468-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:05:26</hora>
-					<paciente>79881617</paciente>
-					<nombre>JHON SMITH VARGAS SUAREZ</nombre>
-					<sexo>F</sexo>
-					<edad>40</edad>
-					<fecha_nacimiento>1985-10-23</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="1037571132">
-				<examen>
-					<id>288391</id>
-					<protocolo_codigo>412509-53</protocolo_codigo>
-					<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-					<tubo>08250469</tubo>
-					<tubo_muestra>08250469-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:07:42</hora>
-					<paciente>1037571132</paciente>
-					<nombre>MARISABEL QUIROS SANCHEZ</nombre>
-					<sexo>F</sexo>
-					<edad>39</edad>
-					<fecha_nacimiento>1986-02-04</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288392</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250469</tubo>
-					<tubo_muestra>08250469-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:07:42</hora>
-					<paciente>1037571132</paciente>
-					<nombre>MARISABEL QUIROS SANCHEZ</nombre>
-					<sexo>F</sexo>
-					<edad>39</edad>
-					<fecha_nacimiento>1986-02-04</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288393</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250469</tubo>
-					<tubo_muestra>08250469-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:07:42</hora>
-					<paciente>1037571132</paciente>
-					<nombre>MARISABEL QUIROS SANCHEZ</nombre>
-					<sexo>F</sexo>
-					<edad>39</edad>
-					<fecha_nacimiento>1986-02-04</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="1017198585">
-				<examen>
-					<id>288394</id>
-					<protocolo_codigo>412509-53</protocolo_codigo>
-					<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-					<tubo>08250470</tubo>
-					<tubo_muestra>08250470-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:10:17</hora>
-					<paciente>1017198585</paciente>
-					<nombre>YERLI JINETH PALACIO RENTERIA</nombre>
-					<sexo>F</sexo>
-					<edad>33</edad>
-					<fecha_nacimiento>1992-01-05</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288395</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250470</tubo>
-					<tubo_muestra>08250470-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:10:17</hora>
-					<paciente>1017198585</paciente>
-					<nombre>YERLI JINETH PALACIO RENTERIA</nombre>
-					<sexo>F</sexo>
-					<edad>33</edad>
-					<fecha_nacimiento>1992-01-05</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288396</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250470</tubo>
-					<tubo_muestra>08250470-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:10:17</hora>
-					<paciente>1017198585</paciente>
-					<nombre>YERLI JINETH PALACIO RENTERIA</nombre>
-					<sexo>F</sexo>
-					<edad>33</edad>
-					<fecha_nacimiento>1992-01-05</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="1152184534">
-				<examen>
-					<id>288397</id>
-					<protocolo_codigo>412509-53</protocolo_codigo>
-					<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-					<tubo>08250471</tubo>
-					<tubo_muestra>08250471-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:13:02</hora>
-					<paciente>1152184534</paciente>
-					<nombre>LAURA CRISTINA LOPEZ MIRANDA</nombre>
-					<sexo>F</sexo>
-					<edad>36</edad>
-					<fecha_nacimiento>1989-11-30</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288398</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250471</tubo>
-					<tubo_muestra>08250471-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:13:02</hora>
-					<paciente>1152184534</paciente>
-					<nombre>LAURA CRISTINA LOPEZ MIRANDA</nombre>
-					<sexo>F</sexo>
-					<edad>36</edad>
-					<fecha_nacimiento>1989-11-30</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288399</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250471</tubo>
-					<tubo_muestra>08250471-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:13:02</hora>
-					<paciente>1152184534</paciente>
-					<nombre>LAURA CRISTINA LOPEZ MIRANDA</nombre>
-					<sexo>F</sexo>
-					<edad>36</edad>
-					<fecha_nacimiento>1989-11-30</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="98534472">
-				<examen>
-					<id>288400</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250472</tubo>
-					<tubo_muestra>08250472-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:19:33</hora>
-					<paciente>98534472</paciente>
-					<nombre>OSCAR JULIAN VASCO RAMIREZ</nombre>
-					<sexo>M</sexo>
-					<edad>54</edad>
-					<fecha_nacimiento>1971-08-30</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288401</id>
-					<protocolo_codigo>412509-53</protocolo_codigo>
-					<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-					<tubo>08250472</tubo>
-					<tubo_muestra>08250472-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:19:33</hora>
-					<paciente>98534472</paciente>
-					<nombre>OSCAR JULIAN VASCO RAMIREZ</nombre>
-					<sexo>M</sexo>
-					<edad>54</edad>
-					<fecha_nacimiento>1971-08-30</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288402</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250472</tubo>
-					<tubo_muestra>08250472-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:19:33</hora>
-					<paciente>98534472</paciente>
-					<nombre>OSCAR JULIAN VASCO RAMIREZ</nombre>
-					<sexo>M</sexo>
-					<edad>54</edad>
-					<fecha_nacimiento>1971-08-30</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="1128406835">
-				<examen>
-					<id>288403</id>
-					<protocolo_codigo>412509-53</protocolo_codigo>
-					<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-					<tubo>08250473</tubo>
-					<tubo_muestra>08250473-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:24:59</hora>
-					<paciente>1128406835</paciente>
-					<nombre>ALEJANDRO MESA PEREZ</nombre>
-					<sexo>M</sexo>
-					<edad>38</edad>
-					<fecha_nacimiento>1987-08-20</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288404</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250473</tubo>
-					<tubo_muestra>08250473-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:24:59</hora>
-					<paciente>1128406835</paciente>
-					<nombre>ALEJANDRO MESA PEREZ</nombre>
-					<sexo>M</sexo>
-					<edad>38</edad>
-					<fecha_nacimiento>1987-08-20</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288405</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250473</tubo>
-					<tubo_muestra>08250473-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:24:59</hora>
-					<paciente>1128406835</paciente>
-					<nombre>ALEJANDRO MESA PEREZ</nombre>
-					<sexo>M</sexo>
-					<edad>38</edad>
-					<fecha_nacimiento>1987-08-20</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="1020420174">
-				<examen>
-					<id>288406</id>
-					<protocolo_codigo>412509-53</protocolo_codigo>
-					<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-					<tubo>08250474</tubo>
-					<tubo_muestra>08250474-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:28:06</hora>
-					<paciente>1020420174</paciente>
-					<nombre>JUAN DIEGO ORJUELA RAMIREZ</nombre>
-					<sexo>M</sexo>
-					<edad>36</edad>
-					<fecha_nacimiento>1989-04-02</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288407</id>
-					<protocolo_codigo>412509-55</protocolo_codigo>
-					<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-					<tubo>08250474</tubo>
-					<tubo_muestra>08250474-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:28:06</hora>
-					<paciente>1020420174</paciente>
-					<nombre>JUAN DIEGO ORJUELA RAMIREZ</nombre>
-					<sexo>M</sexo>
-					<edad>36</edad>
-					<fecha_nacimiento>1989-04-02</fecha_nacimiento>
-				</examen>
-				<examen>
-					<id>288408</id>
-					<protocolo_codigo>412509-1</protocolo_codigo>
-					<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-					<tubo>08250474</tubo>
-					<tubo_muestra>08250474-24</tubo_muestra>
-					<fecha>2025-08-25</fecha>
-					<hora>10:28:06</hora>
-					<paciente>1020420174</paciente>
-					<nombre>JUAN DIEGO ORJUELA RAMIREZ</nombre>
-					<sexo>M</sexo>
-					<edad>36</edad>
-					<fecha_nacimiento>1989-04-02</fecha_nacimiento>
-				</examen>
-			</paciente>
-			<paciente documento="11052486">
-					<examen>
-							<id>288409</id>
-							<protocolo_codigo>412509-53</protocolo_codigo>
-							<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-							<tubo>08250475</tubo>
-							<tubo_muestra>08250475-24</tubo_muestra>
-							<fecha>2025-08-25</fecha>
-							<hora>10:36:06</hora>
-							<paciente>11052486</paciente>
-							<nombre>ELMER MIGUEL ARIAS ACOSTA</nombre>
-							<sexo>M</sexo>
-							<edad>42</edad>
-							<fecha_nacimiento>1983-01-01</fecha_nacimiento>
-					</examen>
-					<examen>
-							<id>288410</id>
-							<protocolo_codigo>412509-55</protocolo_codigo>
-							<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-							<tubo>08250475</tubo>
-							<tubo_muestra>08250475-24</tubo_muestra>
-							<fecha>2025-08-25</fecha>
-							<hora>10:36:06</hora>
-							<paciente>11052486</paciente>
-							<nombre>ELMER MIGUEL ARIAS ACOSTA</nombre>
-							<sexo>M</sexo>
-							<edad>42</edad>
-							<fecha_nacimiento>1983-01-01</fecha_nacimiento>
-					</examen>
-			
-					<examen>
-							<id>288411</id>
-							<protocolo_codigo>412509-1</protocolo_codigo>
-							<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-							<tubo>08250475</tubo>
-							<tubo_muestra>08250475-24</tubo_muestra>
-							<fecha>2025-08-25</fecha>
-							<hora>10:36:06</hora>
-							<paciente>11052486</paciente>
-							<nombre>ELMER MIGUEL ARIAS ACOSTA</nombre>
-							<sexo>M</sexo>
-							<edad>42</edad>
-							<fecha_nacimiento>1983-01-01</fecha_nacimiento>
-					</examen>
-			</paciente>
-			<paciente documento="1020413399">
-					<examen>
-							<id>288412</id>
-							<protocolo_codigo>412509-53</protocolo_codigo>
-							<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-							<tubo>08250476</tubo>
-							<tubo_muestra>08250476-24</tubo_muestra>
-							<fecha>2025-08-25</fecha>
-							<hora>10:49:07</hora>
-							<paciente>1020413399</paciente>
-							<nombre>DEISI YOHANA PAREJA LARREA</nombre>
-							<sexo>F</sexo>
-							<edad>37</edad>
-							<fecha_nacimiento>1988-03-25</fecha_nacimiento>
-					</examen>
-			
-					<examen>
-							<id>288413</id>
-							<protocolo_codigo>412509-55</protocolo_codigo>
-							<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-							<tubo>08250476</tubo>
-							<tubo_muestra>08250476-24</tubo_muestra>
-							<fecha>2025-08-25</fecha>
-							<hora>10:49:07</hora>
-							<paciente>1020413399</paciente>
-							<nombre>DEISI YOHANA PAREJA LARREA</nombre>
-							<sexo>F</sexo>
-							<edad>37</edad>
-							<fecha_nacimiento>1988-03-25</fecha_nacimiento>
-					</examen>
-			
-					<examen>
-							<id>288414</id>
-							<protocolo_codigo>412509-1</protocolo_codigo>
-							<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-							<tubo>08250476</tubo>
-							<tubo_muestra>08250476-24</tubo_muestra>
-							<fecha>2025-08-25</fecha>
-							<hora>10:49:07</hora>
-							<paciente>1020413399</paciente>
-							<nombre>DEISI YOHANA PAREJA LARREA</nombre>
-							<sexo>F</sexo>
-							<edad>37</edad>
-							<fecha_nacimiento>1988-03-25</fecha_nacimiento>
-					</examen>
-			</paciente>
-			<paciente documento="71735368">
-					<examen>
-							<id>288415</id>
-							<protocolo_codigo>412509-53</protocolo_codigo>
-							<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
-							<tubo>08250477</tubo>
-							<tubo_muestra>08250477-24</tubo_muestra>
-							<fecha>2025-08-25</fecha>
-							<hora>10:52:35</hora>
-							<paciente>71735368</paciente>
-							<nombre>JOHN FELIPE VELASQUEZ PATI�O</nombre>
-							<sexo>M</sexo>
-							<edad>53</edad>
-							<fecha_nacimiento>1972-04-15</fecha_nacimiento>
-					</examen>
-			
-					<examen>
-							<id>288416</id>
-							<protocolo_codigo>412509-55</protocolo_codigo>
-							<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
-							<tubo>08250477</tubo>
-							<tubo_muestra>08250477-24</tubo_muestra>
-							<fecha>2025-08-25</fecha>
-							<hora>10:52:35</hora>
-							<paciente>71735368</paciente>
-							<nombre>JOHN FELIPE VELASQUEZ PATI�O</nombre>
-							<sexo>M</sexo>
-							<edad>53</edad>
-							<fecha_nacimiento>1972-04-15</fecha_nacimiento>
-					</examen>
-			
-					<examen>
-							<id>288417</id>
-							<protocolo_codigo>412509-1</protocolo_codigo>
-							<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
-							<tubo>08250477</tubo>
-							<tubo_muestra>08250477-24</tubo_muestra>
-							<fecha>2025-08-25</fecha>
-							<hora>10:52:35</hora>
-							<paciente>71735368</paciente>
-							<nombre>JOHN FELIPE VELASQUEZ PATI�O</nombre>
-							<sexo>M</sexo>
-							<edad>53</edad>
-							<fecha_nacimiento>1972-04-15</fecha_nacimiento>
-					</examen>
-			</paciente>
-		</detalle_respuesta>
-	</resultado_ws>
+<?xml version="1.0" encoding="utf-8"?>
+<resultado_ws>
+	<respuesta>OK</respuesta>
+	<detalle_respuesta>
+		<paciente documento="12345678">
+			<examen>
+				<id>288379</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250465</tubo>
+				<tubo_muestra>08250465-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>09:43:25</hora>
+				<paciente>12345678</paciente>
+				<nombre>pepito perez</nombre>
+				<sexo>M</sexo>
+				<edad>42</edad>
+				<fecha_nacimiento>1983-02-14</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288380</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250465</tubo>
+				<tubo_muestra>08250465-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>09:43:25</hora>
+				<paciente>12345678</paciente>
+				<nombre>pepito perez</nombre>
+				<sexo>M</sexo>
+				<edad>42</edad>
+				<fecha_nacimiento>1983-02-14</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288381</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250465</tubo>
+				<tubo_muestra>08250465-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>09:43:25</hora>
+				<paciente>12345678</paciente>
+				<nombre>pepito perez</nombre>
+				<sexo>M</sexo>
+				<edad>42</edad>
+				<fecha_nacimiento>1983-02-14</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="1016025677">
+			<examen>
+				<id>288382</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250466</tubo>
+				<tubo_muestra>08250466-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>09:56:31</hora>
+				<paciente>1016025677</paciente>
+				<nombre>JHONNATAN ANDREI VELASCO NAVARRETE</nombre>
+				<sexo>M</sexo>
+				<edad>32</edad>
+				<fecha_nacimiento>1993-01-21</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288383</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250466</tubo>
+				<tubo_muestra>08250466-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>09:56:31</hora>
+				<paciente>1016025677</paciente>
+				<nombre>JHONNATAN ANDREI VELASCO NAVARRETE</nombre>
+				<sexo>M</sexo>
+				<edad>32</edad>
+				<fecha_nacimiento>1993-01-21</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288384</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250466</tubo>
+				<tubo_muestra>08250466-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>09:56:31</hora>
+				<paciente>1016025677</paciente>
+				<nombre>JHONNATAN ANDREI VELASCO NAVARRETE</nombre>
+				<sexo>M</sexo>
+				<edad>32</edad>
+				<fecha_nacimiento>1993-01-21</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="1069748258">
+			<examen>
+				<id>288385</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250467</tubo>
+				<tubo_muestra>08250467-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:02:30</hora>
+				<paciente>1069748258</paciente>
+				<nombre>MAICOL YULIAN CARDENAS BAQUERO</nombre>
+				<sexo>F</sexo>
+				<edad>69</edad>
+				<fecha_nacimiento>1956-12-06</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288386</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250467</tubo>
+				<tubo_muestra>08250467-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:02:30</hora>
+				<paciente>1069748258</paciente>
+				<nombre>MAICOL YULIAN CARDENAS BAQUERO</nombre>
+				<sexo>F</sexo>
+				<edad>69</edad>
+				<fecha_nacimiento>1956-12-06</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288387</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250467</tubo>
+				<tubo_muestra>08250467-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:02:30</hora>
+				<paciente>1069748258</paciente>
+				<nombre>MAICOL YULIAN CARDENAS BAQUERO</nombre>
+				<sexo>F</sexo>
+				<edad>69</edad>
+				<fecha_nacimiento>1956-12-06</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="79881617">
+			<examen>
+				<id>288388</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250468</tubo>
+				<tubo_muestra>08250468-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:05:26</hora>
+				<paciente>79881617</paciente>
+				<nombre>JHON SMITH VARGAS SUAREZ</nombre>
+				<sexo>F</sexo>
+				<edad>40</edad>
+				<fecha_nacimiento>1985-10-23</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288389</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250468</tubo>
+				<tubo_muestra>08250468-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:05:26</hora>
+				<paciente>79881617</paciente>
+				<nombre>JHON SMITH VARGAS SUAREZ</nombre>
+				<sexo>F</sexo>
+				<edad>40</edad>
+				<fecha_nacimiento>1985-10-23</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288390</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250468</tubo>
+				<tubo_muestra>08250468-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:05:26</hora>
+				<paciente>79881617</paciente>
+				<nombre>JHON SMITH VARGAS SUAREZ</nombre>
+				<sexo>F</sexo>
+				<edad>40</edad>
+				<fecha_nacimiento>1985-10-23</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="1037571132">
+			<examen>
+				<id>288391</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250469</tubo>
+				<tubo_muestra>08250469-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:07:42</hora>
+				<paciente>1037571132</paciente>
+				<nombre>MARISABEL QUIROS SANCHEZ</nombre>
+				<sexo>F</sexo>
+				<edad>39</edad>
+				<fecha_nacimiento>1986-02-04</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288392</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250469</tubo>
+				<tubo_muestra>08250469-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:07:42</hora>
+				<paciente>1037571132</paciente>
+				<nombre>MARISABEL QUIROS SANCHEZ</nombre>
+				<sexo>F</sexo>
+				<edad>39</edad>
+				<fecha_nacimiento>1986-02-04</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288393</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250469</tubo>
+				<tubo_muestra>08250469-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:07:42</hora>
+				<paciente>1037571132</paciente>
+				<nombre>MARISABEL QUIROS SANCHEZ</nombre>
+				<sexo>F</sexo>
+				<edad>39</edad>
+				<fecha_nacimiento>1986-02-04</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="1017198585">
+			<examen>
+				<id>288394</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250470</tubo>
+				<tubo_muestra>08250470-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:10:17</hora>
+				<paciente>1017198585</paciente>
+				<nombre>YERLI JINETH PALACIO RENTERIA</nombre>
+				<sexo>F</sexo>
+				<edad>33</edad>
+				<fecha_nacimiento>1992-01-05</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288395</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250470</tubo>
+				<tubo_muestra>08250470-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:10:17</hora>
+				<paciente>1017198585</paciente>
+				<nombre>YERLI JINETH PALACIO RENTERIA</nombre>
+				<sexo>F</sexo>
+				<edad>33</edad>
+				<fecha_nacimiento>1992-01-05</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288396</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250470</tubo>
+				<tubo_muestra>08250470-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:10:17</hora>
+				<paciente>1017198585</paciente>
+				<nombre>YERLI JINETH PALACIO RENTERIA</nombre>
+				<sexo>F</sexo>
+				<edad>33</edad>
+				<fecha_nacimiento>1992-01-05</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="1152184534">
+			<examen>
+				<id>288397</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250471</tubo>
+				<tubo_muestra>08250471-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:13:02</hora>
+				<paciente>1152184534</paciente>
+				<nombre>LAURA CRISTINA LOPEZ MIRANDA</nombre>
+				<sexo>F</sexo>
+				<edad>36</edad>
+				<fecha_nacimiento>1989-11-30</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288398</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250471</tubo>
+				<tubo_muestra>08250471-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:13:02</hora>
+				<paciente>1152184534</paciente>
+				<nombre>LAURA CRISTINA LOPEZ MIRANDA</nombre>
+				<sexo>F</sexo>
+				<edad>36</edad>
+				<fecha_nacimiento>1989-11-30</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288399</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250471</tubo>
+				<tubo_muestra>08250471-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:13:02</hora>
+				<paciente>1152184534</paciente>
+				<nombre>LAURA CRISTINA LOPEZ MIRANDA</nombre>
+				<sexo>F</sexo>
+				<edad>36</edad>
+				<fecha_nacimiento>1989-11-30</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="98534472">
+			<examen>
+				<id>288400</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250472</tubo>
+				<tubo_muestra>08250472-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:19:33</hora>
+				<paciente>98534472</paciente>
+				<nombre>OSCAR JULIAN VASCO RAMIREZ</nombre>
+				<sexo>M</sexo>
+				<edad>54</edad>
+				<fecha_nacimiento>1971-08-30</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288401</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250472</tubo>
+				<tubo_muestra>08250472-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:19:33</hora>
+				<paciente>98534472</paciente>
+				<nombre>OSCAR JULIAN VASCO RAMIREZ</nombre>
+				<sexo>M</sexo>
+				<edad>54</edad>
+				<fecha_nacimiento>1971-08-30</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288402</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250472</tubo>
+				<tubo_muestra>08250472-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:19:33</hora>
+				<paciente>98534472</paciente>
+				<nombre>OSCAR JULIAN VASCO RAMIREZ</nombre>
+				<sexo>M</sexo>
+				<edad>54</edad>
+				<fecha_nacimiento>1971-08-30</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="1128406835">
+			<examen>
+				<id>288403</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250473</tubo>
+				<tubo_muestra>08250473-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:24:59</hora>
+				<paciente>1128406835</paciente>
+				<nombre>ALEJANDRO MESA PEREZ</nombre>
+				<sexo>M</sexo>
+				<edad>38</edad>
+				<fecha_nacimiento>1987-08-20</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288404</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250473</tubo>
+				<tubo_muestra>08250473-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:24:59</hora>
+				<paciente>1128406835</paciente>
+				<nombre>ALEJANDRO MESA PEREZ</nombre>
+				<sexo>M</sexo>
+				<edad>38</edad>
+				<fecha_nacimiento>1987-08-20</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288405</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250473</tubo>
+				<tubo_muestra>08250473-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:24:59</hora>
+				<paciente>1128406835</paciente>
+				<nombre>ALEJANDRO MESA PEREZ</nombre>
+				<sexo>M</sexo>
+				<edad>38</edad>
+				<fecha_nacimiento>1987-08-20</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="1020420174">
+			<examen>
+				<id>288406</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250474</tubo>
+				<tubo_muestra>08250474-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:28:06</hora>
+				<paciente>1020420174</paciente>
+				<nombre>JUAN DIEGO ORJUELA RAMIREZ</nombre>
+				<sexo>M</sexo>
+				<edad>36</edad>
+				<fecha_nacimiento>1989-04-02</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288407</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250474</tubo>
+				<tubo_muestra>08250474-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:28:06</hora>
+				<paciente>1020420174</paciente>
+				<nombre>JUAN DIEGO ORJUELA RAMIREZ</nombre>
+				<sexo>M</sexo>
+				<edad>36</edad>
+				<fecha_nacimiento>1989-04-02</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288408</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250474</tubo>
+				<tubo_muestra>08250474-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:28:06</hora>
+				<paciente>1020420174</paciente>
+				<nombre>JUAN DIEGO ORJUELA RAMIREZ</nombre>
+				<sexo>M</sexo>
+				<edad>36</edad>
+				<fecha_nacimiento>1989-04-02</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="11052486">
+			<examen>
+				<id>288409</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250475</tubo>
+				<tubo_muestra>08250475-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:36:06</hora>
+				<paciente>11052486</paciente>
+				<nombre>ELMER MIGUEL ARIAS ACOSTA</nombre>
+				<sexo>M</sexo>
+				<edad>42</edad>
+				<fecha_nacimiento>1983-01-01</fecha_nacimiento>
+			</examen>
+			<examen>
+				<id>288410</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250475</tubo>
+				<tubo_muestra>08250475-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:36:06</hora>
+				<paciente>11052486</paciente>
+				<nombre>ELMER MIGUEL ARIAS ACOSTA</nombre>
+				<sexo>M</sexo>
+				<edad>42</edad>
+				<fecha_nacimiento>1983-01-01</fecha_nacimiento>
+			</examen>
+
+			<examen>
+				<id>288411</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250475</tubo>
+				<tubo_muestra>08250475-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:36:06</hora>
+				<paciente>11052486</paciente>
+				<nombre>ELMER MIGUEL ARIAS ACOSTA</nombre>
+				<sexo>M</sexo>
+				<edad>42</edad>
+				<fecha_nacimiento>1983-01-01</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="1020413399">
+			<examen>
+				<id>288412</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250476</tubo>
+				<tubo_muestra>08250476-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:49:07</hora>
+				<paciente>1020413399</paciente>
+				<nombre>DEISI YOHANA PAREJA LARREA</nombre>
+				<sexo>F</sexo>
+				<edad>37</edad>
+				<fecha_nacimiento>1988-03-25</fecha_nacimiento>
+			</examen>
+
+			<examen>
+				<id>288413</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250476</tubo>
+				<tubo_muestra>08250476-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:49:07</hora>
+				<paciente>1020413399</paciente>
+				<nombre>DEISI YOHANA PAREJA LARREA</nombre>
+				<sexo>F</sexo>
+				<edad>37</edad>
+				<fecha_nacimiento>1988-03-25</fecha_nacimiento>
+			</examen>
+
+			<examen>
+				<id>288414</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250476</tubo>
+				<tubo_muestra>08250476-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:49:07</hora>
+				<paciente>1020413399</paciente>
+				<nombre>DEISI YOHANA PAREJA LARREA</nombre>
+				<sexo>F</sexo>
+				<edad>37</edad>
+				<fecha_nacimiento>1988-03-25</fecha_nacimiento>
+			</examen>
+		</paciente>
+		<paciente documento="71735368">
+			<examen>
+				<id>288415</id>
+				<protocolo_codigo>412509-53</protocolo_codigo>
+				<protocolo_titulo>Trydoyotironina libre (T3L) - Remitido</protocolo_titulo>
+				<tubo>08250477</tubo>
+				<tubo_muestra>08250477-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:52:35</hora>
+				<paciente>71735368</paciente>
+				<nombre>JOHN FELIPE VELASQUEZ PATI�O</nombre>
+				<sexo>M</sexo>
+				<edad>53</edad>
+				<fecha_nacimiento>1972-04-15</fecha_nacimiento>
+			</examen>
+
+			<examen>
+				<id>288416</id>
+				<protocolo_codigo>412509-55</protocolo_codigo>
+				<protocolo_titulo>Tiroxina libre T4L - Remitido</protocolo_titulo>
+				<tubo>08250477</tubo>
+				<tubo_muestra>08250477-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:52:35</hora>
+				<paciente>71735368</paciente>
+				<nombre>JOHN FELIPE VELASQUEZ PATI�O</nombre>
+				<sexo>M</sexo>
+				<edad>53</edad>
+				<fecha_nacimiento>1972-04-15</fecha_nacimiento>
+			</examen>
+
+			<examen>
+				<id>288417</id>
+				<protocolo_codigo>412509-1</protocolo_codigo>
+				<protocolo_titulo>ANTIGENO ESPECIFICO DE PROSTATA</protocolo_titulo>
+				<tubo>08250477</tubo>
+				<tubo_muestra>08250477-24</tubo_muestra>
+				<fecha>2025-08-25</fecha>
+				<hora>10:52:35</hora>
+				<paciente>71735368</paciente>
+				<nombre>JOHN FELIPE VELASQUEZ PATI�O</nombre>
+				<sexo>M</sexo>
+				<edad>53</edad>
+				<fecha_nacimiento>1972-04-15</fecha_nacimiento>
+			</examen>
+		</paciente>
+	</detalle_respuesta>
+</resultado_ws>

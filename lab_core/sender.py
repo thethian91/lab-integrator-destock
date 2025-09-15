@@ -62,3 +62,44 @@ class SNTClient:
         )
         resp.raise_for_status()
         return resp
+
+    def actualizar_examenlab_fecha(
+        self,
+        *,
+        idexamen: str | int,
+        paciente: str | int,
+        fecha: str,
+        resultado_global: str = "Normal",
+        responsable: str = "PENDIENTEVALIDAR",
+        notas: str = "Enviado desde integracion",
+        extra_params: Mapping[str, Any] | None = None,
+    ) -> requests.Response:
+        params = {
+            "API_Key": self.api_key,
+            "API_Secret": self.api_secret,
+            "accion": "actualizar_examenlab_fecha",
+            "idexamen": str(idexamen),
+            "paciente": str(paciente),
+            "fecha": str(fecha),
+            "resultado_global": str(resultado_global),
+            "responsable": str(responsable),
+            "notas": str(notas),
+        }
+        if extra_params:
+            params.update(extra_params)
+
+        log.info(
+            "Notificando examen completo | idexamen=%s paciente=%s fecha=%s resultado_global=%s",
+            idexamen,
+            paciente,
+            fecha,
+            resultado_global,
+        )
+        resp = requests.post(self.base_url, params=params, timeout=self.timeout)
+        log.info(
+            "Resp SNT HTTP %s - %s",
+            resp.status_code,
+            (resp.text[:300] if resp.text else ""),
+        )
+        resp.raise_for_status()
+        return resp

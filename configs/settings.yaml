@@ -17,8 +17,13 @@ api:
   key: 22e88df2be4da512dbcbba4c7df1c7jf
   secret: ea9fe9f5f18506f1e5c1983986e0c82e
   action: ordenes_laboratorio_fecha
-  use_mock: true
+  use_mock: false
   mock_file: samples/orders_20250901.xml
+  update_exam:
+    enabled: true
+    resultado_global: Normal
+    responsable: PENDIENTEVALIDAR
+    notas: Enviado desde integracion
 orders:
   poll_every_sec: 0.0
 monitor:

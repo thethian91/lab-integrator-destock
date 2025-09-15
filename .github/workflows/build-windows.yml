@@ -14,8 +14,8 @@ jobs:
     name: Build EXE (PyInstaller)
     runs-on: windows-latest
     env:
-      APP_NAME: LabIntegratorMonitor # Cambia el nombre si quieres
-      ENTRYPOINT: apps/monitor/main.py # Ajusta si tu entrypoint es otro
+      APP_NAME: LabIntegratorMonitor
+      ENTRYPOINT: start_monitor.py # 👈 ahora apuntamos al launcher
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,26 +60,23 @@ jobs:
             Write-Error "ENTRYPOINT está vacío. Define env:ENTRYPOINT en el job."
           }
 
-          # Normaliza y valida ruta
           if (!(Test-Path -LiteralPath $env:ENTRYPOINT)) {
-            Write-Warning "No se encontró $env:ENTRYPOINT. Listando apps/monitor para depurar..."
+            Write-Warning "No se encontró $env:ENTRYPOINT. Listando raíz y apps/monitor..."
+            Get-ChildItem -Name
             if (Test-Path .\apps\monitor) { Get-ChildItem -Recurse -File .\apps\monitor | Select-Object FullName }
             Write-Error "No se encontró el ENTRYPOINT. Ajusta la ruta."
           }
           $fullEntry = (Resolve-Path -LiteralPath $env:ENTRYPOINT).Path
           Write-Host "ENTRYPOINT absoluto: $fullEntry"
 
-          # Icono opcional
           $iconArgs = @()
           if (Test-Path ".\assets\icons\vitronix.ico") { $iconArgs += @("--icon", ".\assets\icons\vitronix.ico") }
 
-          # Data opcional (no falla si no existen)
           $extraArgs = @()
           if (Test-Path ".\configs") { $extraArgs += @("--add-data", "configs;configs") }
           if (Test-Path ".\assets")  { $extraArgs += @("--add-data", "assets;assets") }
           if (Test-Path ".\lab_core\resources") { $extraArgs += @("--add-data", "lab_core/resources;lab_core/resources") }
 
-          # Construye args como array para evitar argumentos vacíos
           $pyArgs = @(
             "-y", "--clean", "--windowed",
             "--name", $env:APP_NAME,
@@ -88,10 +85,7 @@ jobs:
 
           Write-Host "PyInstaller args: $($pyArgs -join ' ')"
           & pyinstaller $pyArgs
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "PyInstaller falló con código $LASTEXITCODE"
-          }
+          if ($LASTEXITCODE -ne 0) { Write-Error "PyInstaller falló con código $LASTEXITCODE" }
 
       - name: Stage runtime (bundle)
         shell: pwsh

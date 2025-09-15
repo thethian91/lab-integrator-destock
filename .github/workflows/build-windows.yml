@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     env:
       APP_NAME: LabIntegratorMonitor
-      ENTRYPOINT: start_monitor.py # 👈 ahora apuntamos al launcher
+      ENTRYPOINT: apps/start_monitor.py # 👈 tu launcher real vive aquí
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,34 +52,42 @@ jobs:
           "VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "Version = $ver"
 
-      - name: Build executable with PyInstaller
+      - name: Verify entrypoint & packages
         shell: pwsh
         run: |
           Write-Host "ENTRYPOINT env: $env:ENTRYPOINT"
-          if (-not $env:ENTRYPOINT -or $env:ENTRYPOINT.Trim() -eq "") {
-            Write-Error "ENTRYPOINT está vacío. Define env:ENTRYPOINT en el job."
+          if (!(Test-Path -LiteralPath $env:ENTRYPOINT)) {
+            Write-Host "Contenido raíz:"; Get-ChildItem -Name
+            Write-Host "Contenido apps/:"; if (Test-Path .\apps) { Get-ChildItem -Recurse -File .\apps | Select-Object FullName }
+            Write-Error "No se encontró $env:ENTRYPOINT"
           }
 
-          if (!(Test-Path -LiteralPath $env:ENTRYPOINT)) {
-            Write-Warning "No se encontró $env:ENTRYPOINT. Listando raíz y apps/monitor..."
-            Get-ChildItem -Name
-            if (Test-Path .\apps\monitor) { Get-ChildItem -Recurse -File .\apps\monitor | Select-Object FullName }
-            Write-Error "No se encontró el ENTRYPOINT. Ajusta la ruta."
-          }
+          # Asegura que existan los __init__.py para reconocer paquetes
+          if (!(Test-Path ".\apps\__init__.py")) { New-Item -ItemType File -Path ".\apps\__init__.py" -Force | Out-Null }
+          if (!(Test-Path ".\apps\monitor\__init__.py")) { New-Item -ItemType File -Path ".\apps\monitor\__init__.py" -Force | Out-Null }
+          if (Test-Path ".\lab_core" -and !(Test-Path ".\lab_core\__init__.py")) { New-Item -ItemType File -Path ".\lab_core\__init__.py" -Force | Out-Null }
+
+      - name: Build executable with PyInstaller
+        shell: pwsh
+        run: |
           $fullEntry = (Resolve-Path -LiteralPath $env:ENTRYPOINT).Path
           Write-Host "ENTRYPOINT absoluto: $fullEntry"
 
+          # Icono opcional
           $iconArgs = @()
           if (Test-Path ".\assets\icons\vitronix.ico") { $iconArgs += @("--icon", ".\assets\icons\vitronix.ico") }
 
+          # Data opcional (no falla si no existen)
           $extraArgs = @()
           if (Test-Path ".\configs") { $extraArgs += @("--add-data", "configs;configs") }
           if (Test-Path ".\assets")  { $extraArgs += @("--add-data", "assets;assets") }
           if (Test-Path ".\lab_core\resources") { $extraArgs += @("--add-data", "lab_core/resources;lab_core/resources") }
 
+          # --paths . ayuda a la resolución de imports (apps.*, lab_core.*) en el análisis
           $pyArgs = @(
             "-y", "--clean", "--windowed",
             "--name", $env:APP_NAME,
+            "--paths", ".",
             "--collect-all", "PySide6"
           ) + $iconArgs + $extraArgs + @($fullEntry)
 

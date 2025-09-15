@@ -14,8 +14,8 @@ jobs:
     name: Build EXE (PyInstaller)
     runs-on: windows-latest
     env:
-      APP_NAME: LabIntegratorMonitor # <- cambia el nombre si quieres
-      ENTRYPOINT: apps/monitor/main.py # <- ajusta si tu main es otro
+      APP_NAME: LabIntegratorMonitor # Cambia el nombre si quieres
+      ENTRYPOINT: apps/monitor/main.py # Ajusta si tu entrypoint es otro
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,24 +55,43 @@ jobs:
       - name: Build executable with PyInstaller
         shell: pwsh
         run: |
-          if (!(Test-Path $env:ENTRYPOINT)) {
-            Write-Error "No se encontró $env:ENTRYPOINT. Ajusta env:ENTRYPOINT si tu entrypoint es distinto."
+          Write-Host "ENTRYPOINT env: $env:ENTRYPOINT"
+          if (-not $env:ENTRYPOINT -or $env:ENTRYPOINT.Trim() -eq "") {
+            Write-Error "ENTRYPOINT está vacío. Define env:ENTRYPOINT en el job."
           }
 
-          $iconArg = ""
-          if (Test-Path ".\assets\icons\vitronix.ico") { $iconArg = "--icon .\assets\icons\vitronix.ico" }
+          # Normaliza y valida ruta
+          if (!(Test-Path -LiteralPath $env:ENTRYPOINT)) {
+            Write-Warning "No se encontró $env:ENTRYPOINT. Listando apps/monitor para depurar..."
+            if (Test-Path .\apps\monitor) { Get-ChildItem -Recurse -File .\apps\monitor | Select-Object FullName }
+            Write-Error "No se encontró el ENTRYPOINT. Ajusta la ruta."
+          }
+          $fullEntry = (Resolve-Path -LiteralPath $env:ENTRYPOINT).Path
+          Write-Host "ENTRYPOINT absoluto: $fullEntry"
 
+          # Icono opcional
+          $iconArgs = @()
+          if (Test-Path ".\assets\icons\vitronix.ico") { $iconArgs += @("--icon", ".\assets\icons\vitronix.ico") }
+
+          # Data opcional (no falla si no existen)
           $extraArgs = @()
-          if (Test-Path ".\configs") { $extraArgs += '--add-data "configs;configs"' }
-          if (Test-Path ".\assets")  { $extraArgs += '--add-data "assets;assets"' }
-          if (Test-Path ".\lab_core\resources") { $extraArgs += '--add-data "lab_core/resources;lab_core/resources"' }
+          if (Test-Path ".\configs") { $extraArgs += @("--add-data", "configs;configs") }
+          if (Test-Path ".\assets")  { $extraArgs += @("--add-data", "assets;assets") }
+          if (Test-Path ".\lab_core\resources") { $extraArgs += @("--add-data", "lab_core/resources;lab_core/resources") }
 
-          # GUI: --windowed (si necesitas consola para debug, cambia a --console)
-          pyinstaller -y --clean --windowed `
-            --name $env:APP_NAME `
-            --collect-all PySide6 `
-            $iconArg $($extraArgs -join ' ') `
-            $env:ENTRYPOINT
+          # Construye args como array para evitar argumentos vacíos
+          $pyArgs = @(
+            "-y", "--clean", "--windowed",
+            "--name", $env:APP_NAME,
+            "--collect-all", "PySide6"
+          ) + $iconArgs + $extraArgs + @($fullEntry)
+
+          Write-Host "PyInstaller args: $($pyArgs -join ' ')"
+          & pyinstaller $pyArgs
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "PyInstaller falló con código $LASTEXITCODE"
+          }
 
       - name: Stage runtime (bundle)
         shell: pwsh

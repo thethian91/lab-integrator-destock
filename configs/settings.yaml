@@ -1,6 +1,6 @@
 tcp:
   host: 0.0.0.0
-  port: 5002
+  port: 8002
 paths:
   outbox: /Users/thethian91/Documents/projects/integraciones/lab-integrator-v2/inbox
 memo:
@@ -8,7 +8,7 @@ memo:
 input:
   mode: tcp
 file:
-  inbox_dir: /Users/thethian91/Documents/projects/integraciones/lab-integrator-v2/inbox
+  inbox_dir: ''
 logging:
   to_file: false
   level: INFO

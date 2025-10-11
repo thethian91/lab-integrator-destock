@@ -9,11 +9,9 @@ input:
   mode: tcp
 file:
   inbox_dir: /Users/thethian91/Documents/projects/integraciones/lab-integrator-v2/inbox
-
 logging:
   to_file: false
   level: INFO
-
 api:
   base_url: https://demo.rednacional.com.co/erp/snt/websys_webservices.snt
   key: 22e88df2be4da512dbcbba4c7df1c7jf
@@ -21,13 +19,11 @@ api:
   action: ordenes_laboratorio_fecha
   use_mock: false
   mock_file: samples/orders_20250901.xml
-
   update_exam:
     enabled: true
-    resultado_global: "Normal"
-    responsable: "PENDIENTEVALIDAR"
-    notas: "Enviado desde integracion"
-
+    resultado_global: Normal
+    responsable: PENDIENTEVALIDAR
+    notas: Enviado desde integracion
 orders:
   poll_every_sec: 0.0
 monitor:

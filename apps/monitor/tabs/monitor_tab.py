@@ -123,6 +123,9 @@ class MonitorTab(QtWidgets.QWidget):
         # 1) asegurar la BD to update
         init_db()
 
+        # load setting
+        self.load_settings()
+
         # 2) timer para resultados
         self.results_timer = QtCore.QTimer(self)
         self.results_timer.setInterval(10_000)  # cada 10 s (ajústalo)
@@ -326,7 +329,9 @@ class MonitorTab(QtWidgets.QWidget):
     def _connect_server_signals(self):
         # Hacia el memo de Monitor
         self.server.started.connect(
-            lambda h, p: self._append_monitor(f"[START] Escuchando {h}:{p} (MLLP)")
+            lambda host, port: self._append_monitor(
+                f"[START] Escuchando {host}:{port} (MLLP)"
+            )
         )
         self.server.stopped.connect(
             lambda: self._append_monitor("[STOP] Servidor detenido")
@@ -335,7 +340,7 @@ class MonitorTab(QtWidgets.QWidget):
         self.server.error.connect(lambda msg: self._append_monitor(f"[ERROR] {msg}"))
         # (Opcional) hacia logger
         self.server.started.connect(
-            lambda h, p: self.ui_log.info(f"Escuchando {h}:{p} (MLLP)")
+            lambda host, port: self.ui_log.info(f"Escuchando {host}:{port} (MLLP)")
         )
         self.server.stopped.connect(lambda: self.ui_log.info("Servidor detenido"))
         self.server.received.connect(lambda _: self.ui_log.info("HL7 recibido"))

@@ -17,22 +17,22 @@ profiles:
         - "MSH-3 contains FS-114"
     extract:
       patient_id:
-        - "PID-3.2"     # ^288383^  -> 2º componente
-        - "PID-2.1"     # fallback
-        - "PID-3.1"     # fallback
+        - "OBR-3" # NUEVO: Finecare trae aquí un ID usable (1007143092)
+        - "OBR-2" # NUEVO: por si en algún test lo mueven
+        - "MSH-10" # Último recurso: Control ID del mensaje
       exam_code:
-        - "OBR-4.1"     # si el analizador pone código en OBR-4 CE.1
+        - "OBR-4.1" # si el analizador pone código en OBR-4 CE.1
       exam_title:
-        - "OBR-4.2"     # CE.2
-        - "OBR-15.1"    # fallback
+        - "OBR-4.2" # CE.2
+        - "OBR-15.1" # fallback
       obx:
         code:
-          - "OBX-8.2"   # fT4^25 -> 25
-          - "OBX-3.1"   # fallback
+          - "OBX-8.2" # fT4^25 -> 25
+          - "OBX-3.1" # fallback
         text:
-          - "OBX-8.1"   # fT4^25 -> fT4
-          - "OBX-4.1"   # fallback
-          - "OBX-3.1"   # fallback
+          - "OBX-8.1" # fT4^25 -> fT4
+          - "OBX-4.1" # fallback
+          - "OBX-3.1" # fallback
         value: "OBX-5"
         units: "OBX-6"
         ref_range: "OBX-7"
@@ -78,9 +78,9 @@ profiles:
           - "OBX-6"
         # Unidades: normalmente vienen en OBX-7 (a veces como ^g/L), intenta componente 2 primero
         units:
-          - "OBX-6.2"      # si el equipo mete unidades “pegadas” al valor (raro)
-          - "OBX-7.2"      # g/L, fL, 10³/μL, etc.
-          - "OBX-7"        # fallback crudo
+          - "OBX-6.2" # si el equipo mete unidades “pegadas” al valor (raro)
+          - "OBX-7.2" # g/L, fL, 10³/μL, etc.
+          - "OBX-7" # fallback crudo
         ref_range:
           - "OBX-7"
         status:
@@ -88,5 +88,3 @@ profiles:
     normalize:
       text_upper: true
       patient_id_strip_carets: true
-
-

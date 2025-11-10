@@ -13,9 +13,9 @@ logging:
   to_file: false
   level: INFO
 api:
-  base_url: https://sotomayor.rednacional.com.co/erp/snt/websys_webservices.snt
-  key: 241afba7dd3a1983dd5b4ad067a763jb
-  secret: 764mj432dae99c5ddfabc9ce1b610217
+  base_url: https://demo.rednacional.com.co/erp/snt/websys_webservices.snt
+  key: 22e88df2be4da512dbcbba4c7df1c7jf
+  secret: ea9fe9f5f18506f1e5c1983986e0c82e
   action: ordenes_laboratorio_fecha
   use_mock: false
   mock_file: samples/orders_20250901.xml
@@ -25,11 +25,11 @@ api:
     responsable: PENDIENTEVALIDAR
     notas: Enviado desde integracion
 orders:
-  poll_every_sec: 60000.0
+  poll_every_sec: 0.0
 monitor:
   autostart_server: true
 results_export:
-  enabled: true
+  enabled: false
   interval_ms: 5000
   batch_size: 200
   outbox: outbox_xml

@@ -6,16 +6,54 @@ from datetime import datetime
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QDate, Qt, QObject, Signal, QThread
 
+from lab_core.config import load_settings
 from lab_core.db import (
     get_conn,
     mark_obx_error,
     mark_obx_exported,
-)  # helper de conexión (usado por pipeline)
-from lab_core.pipeline import (
-    exportar_examen_concatenado,
-)  # <-- usa el flujo concatenado
+)
+from lab_core.file_tracer import FileTraceWriter
+from lab_core.result_flow import (
+    ResultSender,
+    DefaultMappingRepo,
+    DefaultExamRepo,
+    DefaultXmlBuilder,
+    DefaultApiClient,
+)
+
+import logging
+
+logger = logging.getLogger("lab_integrador.gui")
 
 DB_PATH = "data/labintegrador.db"
+
+cfg = load_settings()
+
+trace_writer = FileTraceWriter(
+    enabled=bool(getattr(cfg.result_export, "save_files", False)),
+    base_dir=str(getattr(cfg.result_export, "save_dir", "outbox_xml")),
+)
+
+# --- ApiClient usando las mismas claves que el flujo ---
+api_client = DefaultApiClient(
+    base_url=cfg.api.base_url,
+    api_key=cfg.api.key,
+    api_secret=cfg.api.secret,
+    timeout=getattr(cfg.api, "timeout", 30) or 30,
+    default_resultado_global=(getattr(cfg.api, "resultado_global", None) or "Normal"),
+    default_responsable=getattr(cfg.api, "responsable", 'PENDIENTEVALIDAR'),
+    default_notas=getattr(cfg.api, "notas", 'Enviado desde integracion'),
+)
+
+# --- Sender apuntando al mapping del cliente ---
+sender = ResultSender(
+    mapping_repo=DefaultMappingRepo(mapping_path="configs/mapping.json"),
+    exam_repo=DefaultExamRepo(db_path=DB_PATH),
+    xml_builder=DefaultXmlBuilder(),  # normaliza ASCII en unidades
+    api_client=api_client,
+    logger=logger,
+    trace_writer=trace_writer,  # Activar el guardado del XML si esta activo
+)
 
 # Columnas visibles (coinciden con hl7_results)
 VISIBLE_COLUMNS = [
@@ -25,7 +63,7 @@ VISIBLE_COLUMNS = [
     ("patient_name", "Paciente"),
     ("exam_code", "Código Examen"),
     ("exam_title", "Nombre Examen"),
-    ("fecha_ref", "Fecha"),  # calculada
+    ("fecha_ref", "Fecha"),
     ("export_status", "Estado"),
     ("exported_at", "Exportado"),
 ]
@@ -38,23 +76,20 @@ class ExportWorker(QObject):
 
     def __init__(self, rows: list[dict], export_fn):
         super().__init__()
-        # --- Export state (modo seguro sin threads) ---
         self._export_queue: list[dict] = []
         self._export_total = 0
         self._export_done = 0
         self._export_dlg: QtWidgets.QProgressDialog | None = None
         self._export_cancelled = False
         self.rows = rows
-        self.export_fn = (
-            export_fn  # callback que exporta 1 item y devuelve (status, detail)
-        )
+        self.export_fn = export_fn
 
     def run(self):
         total = len(self.rows)
         done = 0
         for header in self.rows:
             try:
-                status, detail = self.export_fn(header)  # no UI aquí
+                status, detail = self.export_fn(header)
                 self.item_done.emit(header, status, detail or "")
             except Exception as e:
                 self.item_done.emit(header, "ERROR", str(e))
@@ -170,7 +205,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
         idxs = self.table.selectionModel().selectedRows()
         if not idxs:
             return None
-        # Devuelve índice en el modelo (respetando sort)
         return idxs[0].row()
 
     # ------------------ Datos ------------------
@@ -221,7 +255,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
                 r.exam_title,
                 COALESCE(NULLIF(r.exam_date,''), substr(r.received_at,1,10)) AS fecha_ref,
 
-                -- Estado export calculado por OBX (EXPORTED/ERROR/PENDING)
                 (
                 SELECT
                     CASE
@@ -275,7 +308,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
             for j, (key, _) in enumerate(VISIBLE_COLUMNS):
                 val = r.get(key, "")
                 item = QtGui.QStandardItem("" if val is None else str(val))
-                # Alineación para ID/Fecha/Códigos/Estado
                 if key in (
                     "id",
                     "fecha_ref",
@@ -284,7 +316,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
                     "exported_at",
                 ):
                     item.setTextAlignment(Qt.AlignCenter)
-                # Colorear estado
                 if key == "export_status":
                     st = (val or "").upper()
                     if st == "EXPORTED":
@@ -295,13 +326,11 @@ class OrdersResultsTab(QtWidgets.QWidget):
 
         self.table.setModel(model)
         self.table.resizeColumnsToContents()
-        self._rows = rows  # cache para doble clic / export
+        self._rows = rows
 
     # ------------------ Exportación ------------------
-    # =============== Exportación: modo seguro sin threads ===============
 
     def _start_export_safe(self, rows: list[dict]):
-        # Desactivar UI mientras corre
         self.btn_export_one.setEnabled(False)
         self.btn_export_filtered.setEnabled(False)
         self.btn_refresh.setEnabled(False)
@@ -312,7 +341,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
         self._export_done = 0
         self._export_cancelled = False
 
-        # QProgressDialog SIN botón Cancelar ni cierre por 'X'
         self._export_dlg = QtWidgets.QProgressDialog(
             "Exportando resultados...", "", 0, self._export_total, self
         )
@@ -323,37 +351,30 @@ class OrdersResultsTab(QtWidgets.QWidget):
         self._export_dlg.setWindowModality(Qt.ApplicationModal)
 
         try:
-            self._export_dlg.setCancelButton(None)  # PySide6: elimina el botón Cancelar
+            self._export_dlg.setCancelButton(None)
         except Exception:
-            self._export_dlg.setCancelButtonText("")  # Fallback
+            self._export_dlg.setCancelButtonText("")
         self._export_dlg.setWindowFlag(Qt.WindowCloseButtonHint, False)
-
         self._export_dlg.setValue(0)
 
-        # Iniciar procesamiento item por item en el hilo principal
         QtCore.QTimer.singleShot(0, self._process_next_export_item)
 
     def _cancel_export_safe(self):
-        # Marcar cancelado únicamente si quedan items por procesar
         if self._export_queue:
             self._export_cancelled = True
 
     def _process_next_export_item(self):
-        # Si ya no hay elementos (o se marcó cancelado), finalizar
         if self._export_cancelled or not self._export_queue:
             return self._finish_export_safe()
 
         header = self._export_queue.pop(0)
 
-        # Ejecutar UNA export dentro del hilo principal
         status, detail = "ERROR", ""
         try:
-            # USAR export_fn (concatenado)
             status, detail = self.export_fn(header)
         except Exception as e:
             status, detail = "ERROR", str(e)
 
-        # Avanzar progreso
         self._export_done += 1
         if self._export_dlg:
             self._export_dlg.setValue(self._export_done)
@@ -361,14 +382,12 @@ class OrdersResultsTab(QtWidgets.QWidget):
                 f"Exportando resultados... {self._export_done}/{self._export_total}"
             )
 
-        # Si quedan elementos, procesa el siguiente sin congelar la UI
         if not self._export_cancelled and self._export_queue:
             QtCore.QTimer.singleShot(0, self._process_next_export_item)
         else:
             self._finish_export_safe()
 
     def _finish_export_safe(self):
-        # Cerrar diálogo si sigue abierto
         if self._export_dlg:
             try:
                 self._export_dlg.close()
@@ -376,13 +395,11 @@ class OrdersResultsTab(QtWidgets.QWidget):
                 pass
             self._export_dlg = None
 
-        # Reactivar UI
         self.btn_export_one.setEnabled(True)
         self.btn_export_filtered.setEnabled(True)
         self.btn_refresh.setEnabled(True)
         self.unsetCursor()
 
-        # Refrescar tabla para ver estados actualizados
         try:
             self.refresh()
         except Exception:
@@ -415,78 +432,142 @@ class OrdersResultsTab(QtWidgets.QWidget):
             return
         self._start_export_safe(self._rows)
 
-    # =============== Exportación: modo con thread (opcional) ===============
-    def _run_export_async(self, rows: list[dict]):
-        # Desactivar UI mientras corre
-        self.btn_export_one.setEnabled(False)
-        self.btn_export_filtered.setEnabled(False)
-        self.btn_refresh.setEnabled(False)
-        self.setCursor(Qt.BusyCursor)
-
-        total = len(rows)
-        dlg = QtWidgets.QProgressDialog(
-            "Exportando resultados...", "Cerrar", 0, total, self
-        )
-        dlg.setWindowTitle("Exportación")
-        dlg.setAutoClose(False)
-        dlg.setAutoReset(False)
-        dlg.setMinimumDuration(300)
-        dlg.setValue(0)
-
-        # Thread + worker
-        self._export_thread = QThread(self)
-        # USAR export_fn (concatenado)
-        self._export_worker = ExportWorker(rows, self.export_fn)
-        self._export_worker.moveToThread(self._export_thread)
-
-        # Señales → slots locales
-        self._export_thread.started.connect(self._export_worker.run)
-
-        def on_progress(done, tot):
-            dlg.setValue(done)
-            dlg.setLabelText(f"Exportando resultados... {done}/{tot}")
-
-        def on_item_done(header, status, detail):
-            # opcional: logging por-item
-            pass
-
-        def on_finished():
-            dlg.setValue(total)
-            dlg.close()
-            # Reactivar UI
-            self.btn_export_one.setEnabled(True)
-            self.btn_export_filtered.setEnabled(True)
-            self.btn_refresh.setEnabled(True)
-            self.unsetCursor()
-            # Limpiar thread
-            self._export_worker.deleteLater()
-            self._export_thread.quit()
-            self._export_thread.wait()
-            self._export_thread.deleteLater()
-            # Refrescar la tabla para ver estados
-            self.refresh()
-            QtWidgets.QMessageBox.information(
-                self, "Exportación", "Proceso finalizado."
-            )
-
-        dlg.canceled.connect(lambda: None)  # solo cierra el diálogo (no cancela worker)
-        self._export_worker.progress.connect(on_progress)
-        self._export_worker.item_done.connect(on_item_done)
-        self._export_worker.finished.connect(on_finished)
-
-        # Inicia
-        self._export_thread.start()
-
     # ------------------ Exportación (callback único) ------------------
 
     def export_fn(self, header_row: dict) -> tuple[str, str]:
         """
-        Recibe el header seleccionado de la tabla (que debe tener 'id'),
-        exporta en modo concatenado y retorna (status, detail)
+        Envía cada OBX con ResultSender y retorna (status_global, detail).
+        Cierra el examen automáticamente en el último OBX.
         """
-        exam_id = int(header_row["id"])
-        ok, msg = exportar_examen_concatenado(exam_id)
-        return ("OK" if ok else "ERROR", msg or "Exportación por-OBX terminada")
+        result_id = int(header_row["id"])
+
+        # 1) Cargar OBX del resultado
+        obx_rows = self._load_obx(result_id)
+        if not obx_rows:
+            return ("ERROR", "No hay OBX para exportar.")
+
+        # 2) Resolver el código de barras (tubo_muestra)
+        barcode = self._resolve_barcode(header_row)
+        if not barcode:
+            return ("ERROR", "No se pudo resolver 'tubo_muestra' (código de barras).")
+
+        # 3) Contexto base desde el header
+        analyzer = header_row.get("analyzer_name") or ""
+        paciente_id = header_row.get("patient_id") or ""
+        print(f' >> paciente_id: {paciente_id}')
+
+        # 4) Enviar cada OBX
+        all_ok = True
+        last_index = len(obx_rows) - 1
+        for idx, r in enumerate(obx_rows):
+            obx_id = r.get("id")
+            obx_code = r.get("code") or ""
+            obx_text = r.get("text") or ""
+            obx_value = r.get("value")
+            obx_units = r.get("units") or ""
+            obx_ref_range = r.get("ref_range") or ""
+
+            obx_record = {
+                "analyzer": analyzer,
+                "code": obx_code,
+                "text": obx_text,
+                "value": obx_value,
+                "unit": obx_units,
+                "ref_range": obx_ref_range,
+                "tubo_muestra": barcode,
+                # "paciente_id": paciente_id,
+                "ultimo_del_examen": (idx == last_index),
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+
+            outcome = sender.process_obx(obx_record)
+            print(f'outcome: {outcome}')
+
+            if outcome.ok:
+                try:
+                    mark_obx_exported(
+                        obx_id,
+                        detail=f"id_examen={outcome.id_examen}, client_code={outcome.client_code}",
+                    )
+                except Exception:
+                    pass
+            else:
+                all_ok = False
+                try:
+                    detail_err = (
+                        " | ".join([f"{c}:{m}" for c, m in outcome.errors])
+                        or "Fallo no especificado"
+                    )
+                    mark_obx_error(obx_id, detail=detail_err)
+                except Exception:
+                    pass
+
+        if all_ok:
+            return ("OK", f"Exportados {len(obx_rows)} OBX.")
+        else:
+            return (
+                "ERROR",
+                "Uno o más OBX fallaron. Revisa el detalle en la tabla/estado.",
+            )
+
+    # ------------------ Resolución de tubo ------------------
+
+    def _resolve_barcode(self, header_row: dict) -> str | None:
+        """
+        1) Si el header ya lo trae (tubo_muestra/barcode/sample_id/tube_code), úsalo.
+        2) Si no, primero intentamos usar patient_id como tubo_muestra (caso ICON3 actual).
+        3) Como fallback opcional, usar patient_id como documento + fecha (compatibilidad).
+        """
+        # 1) En header (por si en el futuro se guarda ahí)
+        for k in ("tubo_muestra", "barcode", "sample_id", "tube_code"):
+            val = header_row.get(k)
+            if val:
+                return str(val)
+
+        conn = get_conn(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        pid = header_row.get("patient_id")
+        fecha = header_row.get("fecha_ref")  # yyyy-mm-dd
+
+        # 2) Intentar primero como tubo_muestra = hl7_results.patient_id
+        if pid:
+            cur.execute(
+                """
+                SELECT tubo_muestra
+                FROM exams
+                WHERE tubo_muestra = ?
+                ORDER BY fecha DESC
+                LIMIT 1
+                """,
+                (pid,),
+            )
+            row = cur.fetchone()
+            if row and row["tubo_muestra"]:
+                conn.close()
+                return str(row["tubo_muestra"])
+
+        # 3) (Opcional) fallback: tratar patient_id como documento + fecha
+        if pid and fecha:
+            cur.execute(
+                """
+                SELECT tubo_muestra
+                FROM exams
+                WHERE paciente_doc = ?
+                AND date(fecha) = date(?)
+                ORDER BY fecha DESC
+                LIMIT 1
+                """,
+                (pid, fecha),
+            )
+            row = cur.fetchone()
+            conn.close()
+            if row and row["tubo_muestra"]:
+                return str(row["tubo_muestra"])
+
+        conn.close()
+        return None
 
     # ------------------ Detalle OBX ------------------
 
@@ -533,7 +614,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
         dlg.resize(900, 520)
         v = QtWidgets.QVBoxLayout(dlg)
 
-        # Encabezado corto
         info = QtWidgets.QLabel(
             f"<b>Paciente:</b> {header.get('patient_name','')} "
             f"(<code>{header.get('patient_id','')}</code>) &nbsp;&nbsp; "
@@ -544,7 +624,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
         info.setTextFormat(Qt.RichText)
         v.addWidget(info)
 
-        # Tabla OBX
         tbl = QtWidgets.QTableWidget(0, 8)
         tbl.setHorizontalHeaderLabels(
             [

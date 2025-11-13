@@ -73,10 +73,24 @@ class ExportCfg:
 
 
 @dataclass
+class ResultExportCfg:
+    """Seccion para confg de resultados"""
+
+    enabled: bool = False
+    interval_ms: int = 0
+    batch_size: int = 200
+    outbox: Path = Path('./outbox_xml')
+    delivery_mode: str = 'http_direct'
+    save_files: bool = False
+    save_dir: Path = Path('./outbox_xml')
+
+
+@dataclass
 class Settings:
     api: ApiCfg
     tcp: TcpCfg
     paths: PathsCfg
+    result_export: ResultExportCfg
     # 👇 Importante: usar default_factory en vez de ExportCfg() para evitar el error
     export: ExportCfg = field(default_factory=ExportCfg)
 
@@ -128,4 +142,18 @@ def load_settings(path: str | Path = "configs/settings.yaml") -> Settings:
         dir=Path(export_d.get("dir", "data/exports")),
     )
 
-    return Settings(api=api, tcp=tcp, paths=paths, export=export)
+    # --- RESULT EXPORT ---
+    results_export_d = data.get('results_export', {}) or {}
+    result_export = ResultExportCfg(
+        enabled=bool(results_export_d.get('enabled', False)),
+        interval_ms=int(results_export_d.get('interval_ms', 0)),
+        batch_size=int(results_export_d.get('batch_size', 0)),
+        outbox=Path(results_export_d.get('outbox', './outbox')),
+        delivery_mode=results_export_d.get('delivery_mode', 'xml_only'),
+        save_files=bool(results_export_d.get('save_files', False)),
+        save_dir=Path(results_export_d.get('outbox', './outbox')),
+    )
+
+    return Settings(
+        api=api, tcp=tcp, paths=paths, export=export, result_export=result_export
+    )

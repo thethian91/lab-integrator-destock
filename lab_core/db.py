@@ -47,7 +47,7 @@ CREATE INDEX IF NOT EXISTS idx_exams_status  ON exams(status);
 RESULTS_DDL = r"""
 PRAGMA foreign_keys = ON;
 
--- hl7_results: registros RAW
+-- hl7_results: registros RAW (cabecera/orden)
 CREATE TABLE IF NOT EXISTS hl7_results (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   received_at TEXT,
@@ -66,7 +66,13 @@ CREATE TABLE IF NOT EXISTS hl7_results (
   exam_time TEXT,
 
   source_file TEXT,
-  status TEXT
+  status TEXT,
+
+  -- NUEVOS: auditoría de cierre (actualizar_examenlab_fecha)
+  close_exam_request  TEXT,
+  close_exam_response TEXT,
+  close_exam_status   TEXT,  -- OK | ERROR
+  close_exam_at       TEXT
 );
 
 -- hl7_obx_results: detalle por analito (OBX)
@@ -82,12 +88,16 @@ CREATE TABLE IF NOT EXISTS hl7_obx_results (
   flags TEXT,
   obs_dt TEXT,
 
-  -- columnas de exportación/polling (pueden no existir en BD antiguas; hay migración)
+  -- columnas de exportación/polling
   export_status   TEXT,                -- PENDING|SENT|ERROR|SKIPPED
   export_attempts INTEGER DEFAULT 0,
   export_error    TEXT,
-  export_path     TEXT,
+  export_path     TEXT,                -- (LEGADO) ruta escrita o deprecado si usas export_request
   exported_at     TEXT,
+
+  -- NUEVOS: auditoría de request/response
+  export_request  TEXT,                -- XML/JSON enviado
+  export_response TEXT,                -- cuerpo de respuesta
 
   FOREIGN KEY(result_id) REFERENCES hl7_results(id)
 );
@@ -102,7 +112,7 @@ CREATE INDEX IF NOT EXISTS idx_hl7_results_exam_code     ON hl7_results(exam_cod
 CREATE INDEX IF NOT EXISTS idx_obx_result_id             ON hl7_obx_results(result_id);
 CREATE INDEX IF NOT EXISTS idx_obx_code                  ON hl7_obx_results(code);
 CREATE INDEX IF NOT EXISTS idx_obx_text                  ON hl7_obx_results(text);
--- OJO: NO crear aquí idx_obx_export_status (en BDs viejas falla si no existe la columna)
+-- OJO: el índice de export_status se crea tras asegurar columna (ver migración)
 """
 
 # code_map: mapeo de códigos (analyzer -> cliente)
@@ -132,7 +142,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
   value TEXT
 );
 
-INSERT OR IGNORE INTO schema_meta(key, value) VALUES ('schema_version', '1');
+INSERT OR IGNORE INTO schema_meta(key, value) VALUES ('schema_version', '2');
 """
 
 # =============== Conexión y helpers ===============
@@ -181,6 +191,9 @@ def _build_obx_results_view_sql(extra_aliases: Iterable[str] = ()) -> str:
         "o.export_error AS export_error",
         "o.export_path AS export_path",
         "o.exported_at AS exported_at",
+        # Nuevos en la vista:
+        "o.export_request AS export_request",
+        "o.export_response AS export_response",
     ]
     all_aliases = base_aliases + extras
     extra = ",\n  " + ",\n  ".join(all_aliases) if all_aliases else ""
@@ -229,7 +242,10 @@ def _table_has_col(conn: sqlite3.Connection, table: str, col: str) -> bool:
 
 
 def ensure_obx_dispatch_cols(db_path: str = DEFAULT_DB_PATH) -> None:
-    """Garantiza columnas export_* en hl7_obx_results para BD ya existentes."""
+    """
+    Garantiza columnas export_* en hl7_obx_results para BD ya existentes.
+    También agrega export_request/export_response y el índice por export_status.
+    """
     conn = get_conn(db_path)
     try:
         cols = {
@@ -238,14 +254,37 @@ def ensure_obx_dispatch_cols(db_path: str = DEFAULT_DB_PATH) -> None:
             "export_error": "TEXT",
             "export_path": "TEXT",
             "exported_at": "TEXT",
+            "export_request": "TEXT",  # NUEVO
+            "export_response": "TEXT",  # NUEVO
         }
         for c, ddl in cols.items():
             if not _table_has_col(conn, "hl7_obx_results", c):
                 conn.execute(f"ALTER TABLE hl7_obx_results ADD COLUMN {c} {ddl}")
+
         # crea el índice ahora que la columna existe
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_obx_export_status ON hl7_obx_results(export_status)"
         )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def ensure_results_close_cols(db_path: str = DEFAULT_DB_PATH) -> None:
+    """
+    Garantiza columnas de auditoría de cierre en hl7_results para BD ya existentes.
+    """
+    conn = get_conn(db_path)
+    try:
+        cols = {
+            "close_exam_request": "TEXT",
+            "close_exam_response": "TEXT",
+            "close_exam_status": "TEXT",
+            "close_exam_at": "TEXT",
+        }
+        for c, ddl in cols.items():
+            if not _table_has_col(conn, "hl7_results", c):
+                conn.execute(f"ALTER TABLE hl7_results ADD COLUMN {c} {ddl}")
         conn.commit()
     finally:
         conn.close()
@@ -262,7 +301,7 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
     - code_map (mapeos)
     - schema_meta (versionado)
     - Vista de compatibilidad obx_results
-    - Migración de columnas export_* si faltaran
+    - Migraciones de columnas export_* (OBX) y close_* (RESULTS), e índice
     """
     conn = get_conn(db_path)
     try:
@@ -272,16 +311,17 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
         _exec_script(conn, SCHEMA_META_DDL)
 
         version = get_schema_version(conn)
-        if version < 1:
-            set_schema_version(conn, 1)
+        if version < 2:
+            set_schema_version(conn, 2)
 
         recreate_obx_view(conn)
         conn.commit()
     finally:
         conn.close()
 
-    # Migración out-of-band: asegurar columnas export_* (e índice) aunque la tabla ya existiera
+    # Migraciones out-of-band: asegurar columnas en tablas existentes
     ensure_obx_dispatch_cols(db_path)
+    ensure_results_close_cols(db_path)
 
 
 def ensure_schema(db_path: str = DEFAULT_DB_PATH) -> None:
@@ -422,6 +462,10 @@ def code_map_lookup(
 
 
 def mark_obx_exported(conn: sqlite3.Connection, obx_id: int, path: str) -> None:
+    """
+    Marca OBX como exportado. 'path' se mantiene por compatibilidad (puede ser ruta escrita
+    o puedes pasar '' si usas export_request/export_response como fuente de verdad).
+    """
     conn.execute(
         """
         UPDATE hl7_obx_results
@@ -446,4 +490,40 @@ def mark_obx_error(conn: sqlite3.Connection, obx_id: int, err: str) -> None:
          WHERE id=?
     """,
         (err[:500], obx_id),
+    )
+
+
+def mark_obx_request_response(
+    conn: sqlite3.Connection,
+    obx_id: int,
+    request_xml: str | None,
+    response_text: str | None,
+):
+    """
+    Guarda el XML/JSON enviado (request) y el cuerpo de respuesta (response) para el OBX.
+    """
+    conn.execute(
+        """
+        UPDATE hl7_obx_results
+           SET export_request = COALESCE(?, export_request),
+               export_response = COALESCE(?, export_response)
+         WHERE id = ?
+        """,
+        (request_xml, response_text, obx_id),
+    )
+
+
+def mark_obx_mapping_not_found(conn: sqlite3.Connection, obx_id: int) -> None:
+    """
+    Marca el OBX como error por mapeo no encontrado (mapping_not_found).
+    """
+    conn.execute(
+        """
+        UPDATE hl7_obx_results
+           SET export_status='ERROR',
+               export_error='mapping_not_found',
+               export_attempts=export_attempts+1
+         WHERE id=?
+        """,
+        (obx_id,),
     )

@@ -135,6 +135,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._dispatch_timer.timeout.connect(self._kick_dispatch)
         self._dispatch_running = False
 
+        self._dispatch_thread = None
+        self._dispatch_worker = None
+        self._is_closing = False
+
         # Cargar settings después de construir UI
         self._apply_log_level_from_settings()
         self.monitor_tab.load_settings()
@@ -201,9 +205,36 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # ------------------- Eventos -------------------
     def closeEvent(self, ev: QtGui.QCloseEvent):
+        # Marcar que estamos cerrando para que no se lancen más dispatch
+        self._is_closing = True
+
         # Detener timer al cerrar
         if hasattr(self, "_dispatch_timer") and self._dispatch_timer.isActive():
             self._dispatch_timer.stop()
+
+        # Deshabilitar exportación automática por si algún código extra lo revisa
+        setattr(self, "_export_enabled", False)
+
+        # Si hay un hilo de dispatch corriendo, intentar pararlo sin colgar la UI
+        thread = getattr(self, "_dispatch_thread", None)
+        if thread is not None and thread.isRunning():
+            try:
+                self._xml_status.setText("XML: stopping...")
+            except Exception:
+                pass
+
+            # Pedimos terminar el event loop del hilo
+            thread.quit()
+
+            # Esperar un poco, pero NO bloquear indefinidamente
+            # (p.ej. 2000 ms = 2 segundos)
+            if not thread.wait(2000):
+                # Si no terminó en 2 segundos, cerramos igual
+                # y dejamos que el proceso mate el hilo al salir.
+                logging.getLogger("lab.integrator.dispatcher").warning(
+                    "Timeout esperando que termine el hilo de dispatch; cerrando de todas formas."
+                )
+
         # Guardar geometría y ajustes
         self.settings.setValue("window/geometry", self.saveGeometry())
         # Pide a las tabs que guarden si es necesario
@@ -214,6 +245,11 @@ class MainWindow(QtWidgets.QMainWindow):
     # ------------------- Ciclo de despacho -------------------
     @QtCore.Slot()
     def _kick_dispatch(self):
+
+        # Si la ventana se está cerrando, no iniciar nuevos hilos
+        if getattr(self, "_is_closing", False):
+            return
+
         # Si está deshabilitado por YAML, no correr
         if not getattr(self, "_export_enabled", True):
             return

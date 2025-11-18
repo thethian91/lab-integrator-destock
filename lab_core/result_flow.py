@@ -187,6 +187,7 @@ class ResultSender:
             _log_info("Resultado enviado (analito).")
 
             if obx_record.get("ultimo_del_examen", False):
+                print(f'close_examen: {ctx}')
                 self._close_exam(ctx)
                 _log_info("Examen cerrado (actualizar_examenlab_fecha).")
 
@@ -329,6 +330,7 @@ class ResultSender:
             resp = self.api_client.close_exam(
                 id_examen=ctx.id_examen,
                 order_date=ctx.order_date,
+                paciente=ctx.paciente_id,
             )
             if getattr(self, "tracer", None):
                 self.tracer.save_http(

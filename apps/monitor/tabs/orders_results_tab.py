@@ -454,7 +454,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
         # 3) Contexto base desde el header
         analyzer = header_row.get("analyzer_name") or ""
         paciente_id = header_row.get("patient_id") or ""
-        print(f' >> paciente_id: {paciente_id}')
 
         # 4) Enviar cada OBX
         all_ok = True

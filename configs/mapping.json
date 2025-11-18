@@ -8,6 +8,22 @@
         "FPSA": {
           "client_code": "412509-1",
           "client_title": "ANTIGENO ESPECIFICO DE PROSTATA"
+        },
+        "TSH": {
+          "client_code": "412509-52",
+          "client_title": "TSH - HORMONA ESTIMULANTE DE TIROIDES"
+        },
+        "fT4": {
+          "client_code": "412509-55",
+          "client_title": "T4 LIBRE - TIROXINA LIBRE [T4L]"
+        },
+        "fT3": {
+          "client_code": "412509-53",
+          "client_title": "T3 LIBRE - TRIYODOTIRONINA LIBRE [T3L]"
+        },
+        "MAU": {
+          "client_code": "412509-99",
+          "client_title": "MICROALBUMINURIA"
         }
       }
     },

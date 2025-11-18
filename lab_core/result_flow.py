@@ -250,7 +250,7 @@ class ResultSender:
             )
 
         # 2) Buscar examen por tubo
-        exam = self.exam_repo.get_exam_by_barcode(tubo)
+        exam = self.exam_repo.get_exam_by_barcode(tubo, client_code)
         if not exam:
             raise FlowError(
                 ErrorCode.EXAM_NOT_FOUND,
@@ -312,7 +312,6 @@ class ResultSender:
                 unidad=str(obx_record.get("unit") or ""),
                 ref_range=str(obx_record.get("ref_range") or ""),
             )
-            print(f'_send_one.resp : {resp}')
             if getattr(self, "tracer", None):
                 self.tracer.save_http(
                     kind="send",
@@ -331,7 +330,6 @@ class ResultSender:
                 id_examen=ctx.id_examen,
                 order_date=ctx.order_date,
             )
-            print(f'_close_exam.resp : {resp}')
             if getattr(self, "tracer", None):
                 self.tracer.save_http(
                     kind="close",
@@ -442,17 +440,23 @@ class DefaultExamRepo(ExamRepo):
     def _conn(self):
         return sqlite3.connect(self.db_path)
 
-    def get_exam_by_barcode(self, tubo_muestra: str) -> Optional[Dict[str, Any]]:
+    def get_exam_by_barcode(
+        self, tubo_muestra: str, codigo_cliente: str
+    ) -> Optional[Dict[str, Any]]:
         q = """
-            SELECT id as id_examen, fecha as order_date, paciente_doc as paciente_id
-            FROM exams
-            WHERE tubo_muestra = ?
-            ORDER BY fecha DESC
-            LIMIT 1
+        SELECT id as id_examen,
+            fecha as order_date,
+            paciente_doc as paciente_id
+        FROM exams
+        WHERE replace(tubo_muestra,'-','') = ?
+        AND protocolo_codigo = ?
+        ORDER BY fecha DESC
+        LIMIT 1
         """
         with self._conn() as cx:
-            cur = cx.execute(q, (tubo_muestra,))
+            cur = cx.execute(q, (tubo_muestra.replace('-', ''), codigo_cliente))
             row = cur.fetchone()
+
         if not row:
             return None
         id_examen, order_date, paciente_id = row
@@ -579,8 +583,6 @@ class DefaultApiClient(ApiClient):
             "valor_referencia": ref_range or "",
             "valor_adicional": f"{unidad or ''}",
         }
-
-        print(f'send_result.params: {params}')
 
         url = f"{self.base_url}?{urlencode(params)}"
         resp = requests.post(url, timeout=self.timeout)

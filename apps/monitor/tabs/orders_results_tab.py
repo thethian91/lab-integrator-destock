@@ -447,9 +447,27 @@ class OrdersResultsTab(QtWidgets.QWidget):
             return ("ERROR", "No hay OBX para exportar.")
 
         # 2) Resolver el código de barras (tubo_muestra)
-        barcode = self._resolve_barcode(header_row)
+        # barcode = self._resolve_barcode(header_row)
+        barcode = header_row.get("patient_id")
+
+        '''
+        obx_rows: [{'id': 1, 'code': '9', 'text': 'MAU', 'value': '37.8', 'units': 'mg/L', 'ref_range': '0-20.0', 'flags': 'F'}]
+        header_row: 
+          {
+            'id': 1, 
+            'analyzer_name': 'FINECARE', 
+            'patient_id': '1118685824', 
+            'patient_name': '', 
+            'exam_code': '', 
+            'exam_title': 'ORINA', 
+            'fecha_ref': '2025-11-18', 
+            'export_status': 'ERROR', 
+            'exported_at': None
+        }
+        
         if not barcode:
             return ("ERROR", "No se pudo resolver 'tubo_muestra' (código de barras).")
+        '''
 
         # 3) Contexto base desde el header
         analyzer = header_row.get("analyzer_name") or ""
@@ -480,7 +498,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
             }
 
             outcome = sender.process_obx(obx_record)
-            print(f'outcome: {outcome}')
 
             if outcome.ok:
                 try:

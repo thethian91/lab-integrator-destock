@@ -187,7 +187,6 @@ class ResultSender:
             _log_info("Resultado enviado (analito).")
 
             if obx_record.get("ultimo_del_examen", False):
-                print(f'close_examen: {ctx}')
                 self._close_exam(ctx)
                 _log_info("Examen cerrado (actualizar_examenlab_fecha).")
 
@@ -445,30 +444,71 @@ class DefaultExamRepo(ExamRepo):
     def get_exam_by_barcode(
         self, tubo_muestra: str, codigo_cliente: str
     ) -> Optional[Dict[str, Any]]:
-        q = """
-        SELECT id as id_examen,
-            fecha as order_date,
-            paciente_doc as paciente_id
-        FROM exams
-        WHERE replace(tubo_muestra,'-','') = ?
-        AND protocolo_codigo = ?
-        ORDER BY fecha DESC
-        LIMIT 1
         """
-        with self._conn() as cx:
-            cur = cx.execute(q, (tubo_muestra.replace('-', ''), codigo_cliente))
+        Busca el examen en la tabla `exams` usando:
+          - tubo_muestra  (columna `tubo_muestra`)
+          - codigo_cliente (columna `protocolo_codigo`)
+
+        Nota:
+        - Si el tubo viene sin sufijo (ej: 1118685824) y en BD está como 1118685824-16,
+          se intenta primero por coincidencia exacta y luego por prefijo + código_cliente.
+        """
+        tubo_muestra = (tubo_muestra or "").strip()
+        codigo_cliente = (codigo_cliente or "").strip()
+
+        if not tubo_muestra or not codigo_cliente:
+            return None
+
+        conn = self._conn()
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+
+        # 1) Intento por coincidencia EXACTA
+        cur.execute(
+            """
+            SELECT id, fecha, paciente_doc
+              FROM exams
+             WHERE replace(tubo_muestra,'-','') = ?
+               AND protocolo_codigo = ?
+             ORDER BY datetime(fecha) DESC, id DESC
+             LIMIT 1
+            """,
+            (tubo_muestra.replace('-', ''), codigo_cliente),
+        )
+        row = cur.fetchone()
+
+        # 2) Si no hay resultado y el tubo no trae '-', probar como PREFIJO
+        if not row and "-" not in tubo_muestra:
+            cur.execute(
+                """
+                SELECT id, fecha, paciente_doc
+                  FROM exams
+                 WHERE tubo_muestra LIKE ? || '%'
+                   AND protocolo_codigo = ?
+                 ORDER BY datetime(fecha) DESC, id DESC
+                 LIMIT 1
+                """,
+                (tubo_muestra, codigo_cliente),
+            )
             row = cur.fetchone()
+
+        conn.close()
 
         if not row:
             return None
-        id_examen, order_date, paciente_id = row
-        # Normaliza fecha a YYYY-MM-DD si viene con hora
-        if order_date and len(order_date) > 10:
+
+        id_examen = row["id"]
+        order_date = row["fecha"]
+        paciente_id = row["paciente_doc"]
+
+        # Normalizar fecha a YYYY-MM-DD si viene con hora
+        if order_date and len(str(order_date)) > 10:
             try:
-                dt = datetime.fromisoformat(order_date.replace("Z", ""))
+                dt = datetime.fromisoformat(str(order_date).replace("Z", ""))
                 order_date = dt.date().isoformat()
             except Exception:
                 order_date = str(order_date)[:10]
+
         return {
             "id_examen": id_examen,
             "order_date": order_date,

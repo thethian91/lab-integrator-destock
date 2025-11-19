@@ -174,7 +174,11 @@ def _build_obx_record_from_db(
         """
         SELECT
             analyzer_name,
-            patient_id,
+            CASE
+                WHEN UPPER(analyzer_name) = 'FINECARE' THEN patient_name
+                WHEN UPPER(analyzer_name) IN ('ICON', 'ICON3', 'ICON-3') THEN patient_id
+                ELSE patient_id
+            END AS patient_id,
             exam_date
         FROM hl7_results
         WHERE id = ?

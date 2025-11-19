@@ -449,6 +449,10 @@ class OrdersResultsTab(QtWidgets.QWidget):
         # 2) Resolver el código de barras (tubo_muestra)
         # barcode = self._resolve_barcode(header_row)
         barcode = header_row.get("patient_id")
+        if header_row.get("analyzer_name") == 'FINECARE':
+            barcode = header_row.get("patient_name")
+
+        print(f"patient_name: {barcode}")
 
         '''
         obx_rows: [{'id': 1, 'code': '9', 'text': 'MAU', 'value': '37.8', 'units': 'mg/L', 'ref_range': '0-20.0', 'flags': 'F'}]

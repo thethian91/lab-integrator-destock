@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import xml.etree.ElementTree as ET
+import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,41 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 log = logging.getLogger("lab.integrator.orders")
+
+
+# ============= HELPER PARA FILTRAR EXAMENES
+_ALLOWED_PROTOCOL_CODES: set[str] | None = None
+
+
+def _load_allowed_protocolo_codigos_from_mapping() -> set[str]:
+    """Lee configs/mapping.json y arma el set de códigos de protocolo permitidos.
+
+    Usa el campo `client_code` (o `cliente_codigo` si existiera) de cada analito
+    configurado por analizador.
+    """
+    try:
+        base_dir = Path(__file__).resolve().parent.parent
+        mapping_path = base_dir / "configs" / "mapping.json"
+        data = json.loads(mapping_path.read_text(encoding="utf-8"))
+    except Exception as e:  # fallback defensivo
+        log.warning("No se pudo leer mapping.json para filtrar órdenes: %s", e)
+        return set()
+
+    analyzers = data.get("analyzers", {}) or {}
+    allowed: set[str] = set()
+    for _name, analyzer_cfg in analyzers.items():
+        mapping = (analyzer_cfg or {}).get("map", {}) or {}
+        for _analyzer_code, info in mapping.items():
+            if not isinstance(info, dict):
+                continue
+            code = info.get("client_code") or info.get("cliente_codigo") or ""
+            code = str(code).strip()
+            if code:
+                allowed.add(code)
+    return allowed
+
+
+# ==========================================
 
 
 @dataclass
@@ -91,6 +127,7 @@ def fetch_orders_xml(
     return text
 
 
+'''
 def parse_orders(xml_text: str) -> list[OrderRecord]:
     """Parsea el XML a objetos OrderRecord -> Exam."""
     # Limpieza simple de caracteres sueltos
@@ -116,6 +153,70 @@ def parse_orders(xml_text: str) -> list[OrderRecord]:
                 Exam(
                     id=_t("id"),
                     protocolo_codigo=_t("protocolo_codigo"),
+                    protocolo_titulo=_t("protocolo_titulo"),
+                    tubo=_t("tubo"),
+                    tubo_muestra=_t("tubo_muestra"),
+                    fecha=_t("fecha"),
+                    hora=_t("hora"),
+                    paciente=_t("paciente"),
+                    nombre=_t("nombre"),
+                    sexo=_t("sexo"),
+                    edad=_t("edad"),
+                    fecha_nacimiento=_t("fecha_nacimiento"),
+                )
+            )
+        if exams:
+            records.append(OrderRecord(documento=doc, examenes=exams))
+    return records
+'''
+
+
+def parse_orders(xml_text: str) -> list[OrderRecord]:
+    """Parsea el XML a objetos OrderRecord -> Exam.
+
+    A partir de ahora **solo** conserva los exámenes cuyo `protocolo_codigo`
+    esté mapeado en `configs/mapping.json` (campo `client_code`/`cliente_codigo`).
+    De esta forma la base de datos no se llena con exámenes que nunca se van
+    a procesar en la integración.
+    """
+    global _ALLOWED_PROTOCOL_CODES
+
+    # Lazy-load del set de códigos permitidos para no leer el JSON en cada llamada
+    if _ALLOWED_PROTOCOL_CODES is None:
+        _ALLOWED_PROTOCOL_CODES = _load_allowed_protocolo_codigos_from_mapping()
+
+    allowed = _ALLOWED_PROTOCOL_CODES or set()
+
+    # Limpieza simple de caracteres sueltos
+    xml_text = xml_text.strip()
+    root = ET.fromstring(xml_text)
+
+    # Estructura esperada: resultado_ws/detalle_respuesta/paciente/examen
+    detalle = root.find(".//detalle_respuesta")
+    if detalle is None:
+        return []
+
+    records: list[OrderRecord] = []
+    for paciente in detalle.findall("./paciente"):
+        doc = paciente.get("documento", "").strip()
+        exams: list[Exam] = []
+
+        for ex in paciente.findall("./examen"):
+
+            def _t(tag: str) -> str:
+                el = ex.find(tag)
+                return (el.text or "").strip() if el is not None else ""
+
+            protocolo_codigo = _t("protocolo_codigo")
+
+            # Si hay lista de permitidos y este código no está -> lo saltamos
+            if allowed and protocolo_codigo not in allowed:
+                continue
+
+            exams.append(
+                Exam(
+                    id=_t("id"),
+                    protocolo_codigo=protocolo_codigo,
                     protocolo_titulo=_t("protocolo_titulo"),
                     tubo=_t("tubo"),
                     tubo_muestra=_t("tubo_muestra"),

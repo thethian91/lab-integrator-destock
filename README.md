@@ -1,90 +1,208 @@
+# Lab Integrator v2
 
-# Lab Integrator v2 (GUI Starter)
+Integrador de laboratorio (HL7 → XML/API) con interfaz gráfica multiplataforma.  
+Permite recibir resultados desde analizadores, mapearlos, almacenarlos en SQLite y enviarlos a un LIS/ERP mediante API REST, con flujo automático y manual, reportes y trazabilidad completa.
 
-Multiplatform GUI starter for a lab integrator. **MVP included:** live TCP receiver that shows incoming payloads in a memo and saves them to disk. Two additional apps are included as stubs: a Configurator and a Dashboard.
+Proyecto orientado a escenarios como Finecare, Icon, etc. integrados con sistemas tipo SOFIA / SNT.
 
-## Structure
-```
+---
+
+## ✨ Características principales
+
+- Ingesta HL7 desde archivos o socket TCP.
+- Mapeo flexible mediante hl7_map.yaml y mapping.json.
+- Persistencia en SQLite con tablas:
+  - patients, exams
+  - hl7_results (RAW)
+  - hl7_obx_results (analitos)
+  - trazabilidad de exportación
+- Configuración centralizada en configs/settings.yaml.
+- GUI (PySide6) con pestañas:
+  - Monitor
+  - Orders
+  - Orders & Results (envío manual)
+  - Reports (pendientes / enviados)
+  - Traceability
+  - SQL Viewer
+  - Logs
+  - Config / Maintenance
+- Flujo automático con cierre de examen.
+- Guardado opcional de XML enviados.
+- Auditoría completa: HL7 → OBX → API.
+
+---
+
+## 🗂️ Estructura del proyecto
+
 lab-integrator-v2/
 ├─ lab_core/
-│  └─ connectors/
-│     └─ tcp.py            # Async TCP receiver → saves files + emits events
+│ ├─ db.py
+│ ├─ dispatcher.py
+│ ├─ result_ingest.py
+│ ├─ result_sender.py
+│ ├─ config.py
+│ └─ connectors/
+│ └─ tcp.py
 ├─ apps/
-│  ├─ monitor/             # GUI monitor (ready to run)
-│  ├─ configurator/        # GUI stub for settings
-│  └─ dashboard/           # GUI stub for listing saved files
+│ └─ monitor/
+│ ├─ main.py
+│ ├─ net_server.py
+│ ├─ qt_logging.py
+│ └─ tabs/
+│ ├─ monitor_tab.py
+│ ├─ orders_tab.py
+│ ├─ orders_results_tab.py
+│ ├─ reports_tab.py
+│ ├─ traceability_tab.py
+│ ├─ sql_tab.py
+│ ├─ logs_tab.py
+│ ├─ config_tab.py
+│ └─ maintenance_tab.py
 ├─ configs/
-│  └─ settings.yaml.example
-├─ samples/                # HL7 example payloads
-├─ scripts/                # Utilities (send HL7, PowerShell sender)
-├─ resources/              # Icons/QSS (optional)
+│ ├─ settings.yaml
+│ ├─ settings.yaml.example
+│ ├─ hl7_map.yaml
+│ └─ mapping.json
+├─ data/ (SQLite)
+├─ inbox/
+├─ outbox_xml/
+├─ resources/
+├─ samples/
+├─ scripts/
+├─ README.md
 ├─ requirements.txt
-└─ README.md
+├─ requirements-dev.txt
+└─ pyproject.toml
+
+---
+
+## 🧩 Modelo de datos (resumen)
+
+### patients
+
+Documento, nombre, sexo, fecha nacimiento.
+
+### exams
+
+Orden, código de tubo, protocolo, fecha, estado.
+
+### hl7_results
+
+Registro RAW del HL7 con auditoría y estado de cierre.
+
+### hl7_obx_results
+
+Un analito por fila.
+Estado individual: PENDING / SENT / ERROR / MAPPING_NOT_FOUND.
+Incluye request/response del API, timestamp y mensaje de error.
+
+---
+
+## ✅ Requisitos
+
+- Python 3.11+
+- Instalación:
+
+```
+pip install -r requirements.txt
 ```
 
-## Quickstart
+---
 
-> Requires **Python 3.11+**. Tested with PySide6 + qasync.
+## 🚀 Puesta en marcha rápida
 
-### 1) Create venv & install
-**Windows (PowerShell)**
-```powershell
+1. Clonar el repo:
+
+```
+git clone <url>
+cd lab-integrator-v2
+```
+
+2. Opcional: entorno virtual
+
+```
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-**macOS / Linux**
-```bash
-python3 -m venv .venv
 source .venv/bin/activate
+```
+
+3. Instalar dependencias:
+
+```
 pip install -r requirements.txt
 ```
 
-### 2) Run the GUI Monitor
-```bash
-python apps/monitor/main.py
-```
-By default it listens on **0.0.0.0:5002** and writes files to `./inbox` (you can change it on the GUI).
+4. Copiar configuración:
 
-### 3) Send a test HL7
-Using Python script (cross‑platform):
-```bash
-python scripts/send_hl7.py --host 127.0.0.1 --port 5002 --file samples/sample.hl7
+```
+cp configs/settings.yaml.example configs/settings.yaml
 ```
 
-Or PowerShell one‑liner (Windows):
-```powershell
-scripts\send_hl7.ps1 -Host 127.0.0.1 -Port 5002 -Path "samples\sample.hl7"
+5. Configurar settings, hl7_map.yaml, mapping.json
+
+6. Ejecutar monitor:
+
+```
+python -m apps.monitor.main
 ```
 
-### Packaging with PyInstaller
+---
 
-Install:
-```bash
-pip install pyinstaller
+## 🧪 Flujo de trabajo
+
+### Ingesta HL7
+
+HL7 → result_ingest → SQLite (hl7_results + hl7_obx_results).
+
+### Automático
+
+dispatcher → envía OBX → si al menos uno OK → cierre de examen → auditoría.
+
+### Manual
+
+Orders & Results → filtrar, reenviar, ver XML, cerrar examen.
+
+---
+
+## 📊 Reportes y trazabilidad
+
+### Reports tab
+
+Pendientes, enviados, filtros por fecha y estado.
+
+### Traceability tab
+
+HL7 RAW, OBX, requests/responses API, timeline completo.
+
+---
+
+## 🛠️ Desarrollo
+
+Formateo:
+
+```
+black .
 ```
 
-**Windows:**
-```powershell
-pyinstaller apps/monitor/main.py ^
-  --name lab-monitor ^
-  --onefile --windowed ^
-  --add-data "configs;configs" ^
-  --add-data "resources;resources"
+Linter:
+
+```
+ruff check .
 ```
 
-**macOS/Linux:**
-```bash
-pyinstaller apps/monitor/main.py   --name lab-monitor   --onefile --windowed   --add-data "configs:configs"   --add-data "resources:resources"
+---
+
+## 🧭 Roadmap
+
+- Dashboard KPIs
+- Exportación a Excel
+- Modo simulación
+- Editor gráfico del hl7_map.yaml
+
+---
+
+## 📄 Ejemplo XML enviado
+
 ```
-
-### Notes
-- This MVP **does not transform** messages. It simply receives and saves them.
-- For future versions, you can add SQLite persistence, UDP/Serial/File‑Drop connectors, and a richer dashboard.
-
-
-example result XML
 <?xml version="1.0" encoding="utf-8" ?>
 <log_envio>
   <idexamen>412509-55</idexamen>
@@ -95,4 +213,4 @@ example result XML
   <valor_referencia>66-181</valor_referencia>
   <valor_adicional>UNITS:nmol/L</valor_adicional>
 </log_envio>
-
+```

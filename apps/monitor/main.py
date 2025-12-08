@@ -16,6 +16,10 @@ from .tabs.maintenance_tab import MaintenanceTab
 from .tabs.monitor_tab import MonitorTab
 from .tabs.orders_results_tab import OrdersResultsTab
 from .tabs.orders_tab import OrdersTab
+from .tabs.sql_tab import SqlTab
+from .tabs.reports_tab import ReportsTab
+from .tabs.traceability_tab import TraceabilityTab
+
 
 APP_ORG = "Vitronix"
 APP_NAME = "LabIntegratorMonitor"
@@ -104,6 +108,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.orders_results_tab = OrdersResultsTab()  # Resultados
         self.maint_tab = MaintenanceTab()
         self.logs_tab = LogsTab()
+        self.sql_tab = SqlTab()
+        self.reports_tab = ReportsTab()
+        self.traceability_tab = TraceabilityTab()
 
         # Icono de la app
         self.setWindowIcon(QtGui.QIcon(str(RES / "app.png")))
@@ -125,6 +132,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.maint_tab, QtGui.QIcon(str(RES / "tests.png")), "Mantenimiento"
         )
         self.tabs.addTab(self.logs_tab, QtGui.QIcon(str(RES / "logs.png")), "Logs")
+
+        self.tabs.addTab(self.sql_tab, QtGui.QIcon(str(RES / "tests.png")), "SQL")
+        self.tabs.addTab(
+            self.reports_tab,
+            QtGui.QIcon(str(RES / "tests.png")),  # cambia el icono si quieres
+            "Reportes",
+        )
+        self.tabs.addTab(
+            self.traceability_tab,
+            QtGui.QIcon(str(RES / "tests.png")),  # o el ícono que quieras
+            "Trazabilidad",
+        )
 
         # Status de exportación en la barra de estado
         self._xml_status = QtWidgets.QLabel("XML: idle")

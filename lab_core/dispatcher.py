@@ -435,6 +435,7 @@ def dispatch_cycle(db_path: str, out_dir: str, batch_size: int = 200) -> dict[st
       - Llama a ResultSender.process_obx(obx_record)
       - Marca export_status según el resultado (EXPORTED / MAPPING_NOT_FOUND / ERROR)
     """
+
     cfg = load_settings()
     mode = cfg.result_export.delivery_mode
     save_files = cfg.result_export.save_files
@@ -490,6 +491,11 @@ def dispatch_cycle(db_path: str, out_dir: str, batch_size: int = 200) -> dict[st
             by_result.setdefault(int(r["result_id"]), []).append(int(r["obx_id"]))
 
         for result_id, obx_ids in by_result.items():
+            # --- flags por examen (igual que en export_fn del tab) ---
+            any_ok = False
+            all_ok = True
+            last_ok_outcome = None
+
             for obx_id in obx_ids:
                 try:
                     obx_record = _build_obx_record_from_db(conn, result_id, obx_id)
@@ -507,7 +513,10 @@ def dispatch_cycle(db_path: str, out_dir: str, batch_size: int = 200) -> dict[st
                         # Exportado correctamente
                         mark_obx_exported(conn, obx_id, "")
                         sent += 1
+                        any_ok = True
+                        last_ok_outcome = outcome
                     else:
+                        all_ok = False
                         # Si hay error de mapping, marcamos específicamente
                         any_mapping_err = any(
                             code == ErrorCode.MAPPING_NOT_FOUND
@@ -532,6 +541,34 @@ def dispatch_cycle(db_path: str, out_dir: str, batch_size: int = 200) -> dict[st
                     mark_obx_error(conn, obx_id, f"EXCEPTION: {ex}")
                     conn.commit()
                     err += 1
+
+            # --- Cerrar examen SOLO si al menos un analito se envió OK ---
+            if any_ok and last_ok_outcome and last_ok_outcome.id_examen:
+                try:
+                    # leemos el paciente_doc desde exams usando la misma conexión
+                    cur = conn.execute(
+                        "SELECT paciente_doc FROM exams WHERE id = ?",
+                        (last_ok_outcome.id_examen,),
+                    )
+                    row = cur.fetchone()
+                    paciente_doc = (row["paciente_doc"] or "").strip() if row else ""
+
+                    resp = api_client.close_exam(
+                        id_examen=last_ok_outcome.id_examen,
+                        order_date=last_ok_outcome.order_date or "",
+                        paciente=paciente_doc,
+                    )
+                    log.info(
+                        "Exam %s cerrado automáticamente (AUTO). Resp: %s",
+                        last_ok_outcome.id_examen,
+                        (resp.get("raw")[:200] if isinstance(resp, dict) else resp),
+                    )
+                except Exception as ex:
+                    log.exception(
+                        "Error cerrando examen id=%s en dispatch_cycle: %s",
+                        last_ok_outcome.id_examen,
+                        ex,
+                    )
 
         log.info(
             "Dispatch cycle end | picked=%s sent=%s error=%s", len(pend), sent, err

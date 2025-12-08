@@ -159,7 +159,6 @@ def exportar_examen_concatenado(result_id: int) -> tuple[bool, str]:
                         responsable=responsable,
                         notas=notas,
                     )
-                    print(f"resp: {resp}")
                     log.info(
                         "Examen %s marcado como COMPLETADO (respuesta: %s)",
                         id_examen,

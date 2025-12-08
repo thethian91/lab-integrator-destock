@@ -11,6 +11,7 @@ from lab_core.db import (
     get_conn,
     mark_obx_error,
     mark_obx_exported,
+    DEFAULT_DB_PATH as DB_PATH,
 )
 from lab_core.file_tracer import FileTraceWriter
 from lab_core.result_flow import (
@@ -20,12 +21,9 @@ from lab_core.result_flow import (
     DefaultXmlBuilder,
     DefaultApiClient,
 )
-
 import logging
 
 logger = logging.getLogger("lab_integrador.gui")
-
-DB_PATH = "data/labintegrador.db"
 
 cfg = load_settings()
 
@@ -54,6 +52,31 @@ sender = ResultSender(
     logger=logger,
     trace_writer=trace_writer,  # Activar el guardado del XML si esta activo
 )
+
+
+def get_paciente_doc_by_exam_id(id_examen: int, db_path: str = DB_PATH) -> str:
+    """
+    Devuelve el paciente_doc de la tabla exams para un id_examen dado.
+    Si no existe o está vacío, devuelve "".
+    """
+    conn = get_conn(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT paciente_doc FROM exams WHERE id = ?",
+            (id_examen,),
+        )
+        row = cur.fetchone()
+        if row and row["paciente_doc"]:
+            return str(row["paciente_doc"])
+        return ""
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
 
 # Columnas visibles (coinciden con hl7_results)
 VISIBLE_COLUMNS = [
@@ -437,6 +460,144 @@ class OrdersResultsTab(QtWidgets.QWidget):
     def export_fn(self, header_row: dict) -> tuple[str, str]:
         """
         Envía cada OBX con ResultSender y retorna (status_global, detail).
+        Cierra el examen al final SOLO si al menos un analito se envió OK.
+        """
+        result_id = int(header_row["id"])
+
+        # 1) Cargar OBX del resultado
+        obx_rows = self._load_obx(result_id)
+        if not obx_rows:
+            return ("ERROR", "No hay OBX para exportar.")
+
+        # 2) Resolver el código de barras (tubo_muestra)
+        barcode = self._resolve_barcode(header_row)
+        if header_row.get("analyzer_name") == 'FINECARE':
+            barcode = header_row.get("patient_name")
+
+        if not barcode:
+            return ("ERROR", "No se pudo resolver 'tubo_muestra' (código de barras).")
+
+        analyzer = header_row.get("analyzer_name") or ""
+
+        # Flags para lógica de cierre
+        any_ok = False
+        last_ok_outcome = None
+
+        # Usamos SIEMPRE la misma conexión para marcar los OBX
+        conn = get_conn(DB_PATH)
+        try:
+            all_ok = True
+            last_index = len(obx_rows) - 1
+
+            for idx, r in enumerate(obx_rows):
+                obx_id = r.get("id")
+                if not obx_id:
+                    continue
+
+                obx_code = r.get("code") or ""
+                obx_text = r.get("text") or ""
+                obx_value = r.get("value")
+                obx_units = r.get("units") or ""
+                obx_ref_range = r.get("ref_range") or ""
+
+                obx_record = {
+                    "analyzer": analyzer,
+                    "code": obx_code,
+                    "text": obx_text,
+                    "value": obx_value,
+                    "unit": obx_units,
+                    "ref_range": obx_ref_range,
+                    "tubo_muestra": barcode,
+                    # OJO: ahora NO delegamos el cierre aquí
+                    "ultimo_del_examen": False,
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                }
+
+                outcome = sender.process_obx(obx_record)
+
+                if outcome.ok:
+                    any_ok = True
+                    last_ok_outcome = outcome
+                    try:
+                        # path lo dejamos vacío porque usamos export_request/export_response
+                        mark_obx_exported(conn, obx_id, "")
+                    except Exception:
+                        logger.exception("Error marcando OBX exportado (id=%s)", obx_id)
+                else:
+                    all_ok = False
+                    try:
+                        detail_err = (
+                            " | ".join([f"{c}:{m}" for c, m in outcome.errors])
+                            or "Fallo no especificado"
+                        )
+                        mark_obx_error(conn, obx_id, detail_err)
+                    except Exception:
+                        logger.exception("Error marcando OBX con ERROR (id=%s)", obx_id)
+
+            conn.commit()
+        finally:
+            conn.close()
+
+        # 3) Cerrar examen SOLO si al menos un analito se envió OK
+        if any_ok and last_ok_outcome and last_ok_outcome.id_examen:
+            try:
+                paciente_doc = get_paciente_doc_by_exam_id(last_ok_outcome.id_examen)
+                resp = api_client.close_exam(
+                    id_examen=last_ok_outcome.id_examen,
+                    order_date=last_ok_outcome.order_date,
+                    paciente=paciente_doc,
+                )
+
+                # Guardar también la trazabilidad del cierre en hl7_results
+                conn2 = get_conn(DB_PATH)
+                try:
+                    conn2.execute(
+                        """
+                        UPDATE hl7_results
+                        SET close_exam_request  = ?,
+                            close_exam_response = ?,
+                            close_exam_status   = 'OK',
+                            close_exam_at       = ?
+                        WHERE id = ?
+                        """,
+                        (
+                            resp.get("url", ""),
+                            resp.get("raw", ""),
+                            datetime.now().isoformat(timespec="seconds"),
+                            result_id,
+                        ),
+                    )
+                    conn2.commit()
+                finally:
+                    conn2.close()
+
+                logger.info(
+                    "Cierre de examen OK (result_id=%s, id_examen=%s)",
+                    result_id,
+                    last_ok_outcome.id_examen,
+                )
+            except Exception as ex:
+                logger.exception(
+                    "Error cerrando examen para result_id=%s: %s", result_id, ex
+                )
+
+        # 4) Resultado global para la UI
+        if all_ok:
+            return ("OK", f"Exportados {len(obx_rows)} OBX.")
+        elif any_ok:
+            return (
+                "ERROR",
+                "Algunos OBX fallaron pero al menos uno fue enviado. Revisa la tabla/estado.",
+            )
+        else:
+            return (
+                "ERROR",
+                "Todos los OBX fallaron. El examen NO se cerró.",
+            )
+
+    def export_fn_old(self, header_row: dict) -> tuple[str, str]:
+        """
+        Envía cada OBX con ResultSender y retorna (status_global, detail).
         Cierra el examen automáticamente en el último OBX.
         """
         result_id = int(header_row["id"])
@@ -451,27 +612,6 @@ class OrdersResultsTab(QtWidgets.QWidget):
         barcode = header_row.get("patient_id")
         if header_row.get("analyzer_name") == 'FINECARE':
             barcode = header_row.get("patient_name")
-
-        print(f"patient_name: {barcode}")
-
-        '''
-        obx_rows: [{'id': 1, 'code': '9', 'text': 'MAU', 'value': '37.8', 'units': 'mg/L', 'ref_range': '0-20.0', 'flags': 'F'}]
-        header_row: 
-          {
-            'id': 1, 
-            'analyzer_name': 'FINECARE', 
-            'patient_id': '1118685824', 
-            'patient_name': '', 
-            'exam_code': '', 
-            'exam_title': 'ORINA', 
-            'fecha_ref': '2025-11-18', 
-            'export_status': 'ERROR', 
-            'exported_at': None
-        }
-        
-        if not barcode:
-            return ("ERROR", "No se pudo resolver 'tubo_muestra' (código de barras).")
-        '''
 
         # 3) Contexto base desde el header
         analyzer = header_row.get("analyzer_name") or ""
@@ -496,31 +636,36 @@ class OrdersResultsTab(QtWidgets.QWidget):
                 "unit": obx_units,
                 "ref_range": obx_ref_range,
                 "tubo_muestra": barcode,
-                # "paciente_id": paciente_id,
                 "ultimo_del_examen": (idx == last_index),
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
 
             outcome = sender.process_obx(obx_record)
 
-            if outcome.ok:
-                try:
-                    mark_obx_exported(
-                        obx_id,
-                        detail=f"id_examen={outcome.id_examen}, client_code={outcome.client_code}",
-                    )
-                except Exception:
-                    pass
-            else:
-                all_ok = False
-                try:
-                    detail_err = (
-                        " | ".join([f"{c}:{m}" for c, m in outcome.errors])
-                        or "Fallo no especificado"
-                    )
-                    mark_obx_error(obx_id, detail=detail_err)
-                except Exception:
-                    pass
+            conn = get_conn(DB_PATH)
+            try:
+                if outcome.ok:
+                    try:
+                        mark_obx_exported(
+                            conn,
+                            obx_id,
+                            detail=f"id_examen={outcome.id_examen}, client_code={outcome.client_code}",
+                        )
+                    except Exception:
+                        pass
+                else:
+                    all_ok = False
+                    try:
+                        detail_err = (
+                            " | ".join([f"{c}:{m}" for c, m in outcome.errors])
+                            or "Fallo no especificado"
+                        )
+                        mark_obx_error(conn, obx_id, detail=detail_err)
+                    except Exception:
+                        pass
+                conn.commit()
+            finally:
+                conn.close()
 
         if all_ok:
             return ("OK", f"Exportados {len(obx_rows)} OBX.")

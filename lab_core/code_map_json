@@ -1,0 +1,60 @@
+from __future__ import annotations
+import json
+from pathlib import Path
+from typing import Optional, Dict, Any
+
+
+def _norm(s: str) -> str:
+    return (s or "").strip().upper().replace(" ", "").replace("-", "").replace("_", "")
+
+
+class JSONCodeMapper:
+    """
+    Resuelve (analyzer_name, analyzer_code) -> { client_code, ... }
+    desde un archivo JSON (esquema v1).
+    """
+
+    def __init__(self, json_path: str | Path):
+        self.path = Path(json_path)
+        self._raw: Dict[str, Any] = {}
+        self._analyzers_idx: Dict[str, Dict[str, Any]] = (
+            {}
+        )  # clave normalizada -> nodo analyzer
+        self.reload()
+
+    def reload(self) -> None:
+        if not self.path.exists():
+            raise FileNotFoundError(f"Code map JSON not found: {self.path}")
+        self._raw = json.loads(self.path.read_text(encoding="utf-8"))
+        self._build_index()
+
+    def _build_index(self) -> None:
+        self._analyzers_idx.clear()
+        analyzers = self._raw.get("analyzers") or {}
+        for name, node in analyzers.items():
+            key = _norm(name)
+            self._analyzers_idx[key] = node
+            for alias in node.get("aliases") or []:
+                self._analyzers_idx[_norm(alias)] = node
+
+    def resolve(
+        self,
+        analyzer_name: str,
+        analyzer_code: str,
+        *,
+        default: Optional[dict] = None,
+    ) -> Optional[dict]:
+        akey = _norm(analyzer_name)
+        n = self._analyzers_idx.get(akey)
+        if not n:
+            return default
+        amap = n.get("map") or {}
+        hit = amap.get(analyzer_code) or amap.get(_norm(analyzer_code))
+        # también intentamos normalizado por si el analizador manda "FT3 " o "ft3"
+        if not hit:
+            # fallback: normalizamos todas las claves del mapa para buscar
+            for k, v in amap.items():
+                if _norm(k) == _norm(analyzer_code):
+                    hit = v
+                    break
+        return hit or default

@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "updated_at": "2025-09-10T10:05:00-0500",
+  "analyzers": {
+    "FINECARE_FS114": {
+      "aliases": ["FINECARE", "FS114", "Finecare FS114"],
+      "map": {
+        "FPSA": {
+          "client_code": "412509-1",
+          "client_title": "ANTIGENO ESPECIFICO DE PROSTATA"
+        },
+        "TSH": {
+          "client_code": "412509-52",
+          "client_title": "TSH - HORMONA ESTIMULANTE DE TIROIDES"
+        },
+        "fT4": {
+          "client_code": "412509-55",
+          "client_title": "T4 LIBRE - TIROXINA LIBRE [T4L]"
+        },
+        "fT3": {
+          "client_code": "412509-53",
+          "client_title": "T3 LIBRE - TRIYODOTIRONINA LIBRE [T3L]"
+        },
+        "MAU": {
+          "client_code": "412509-99",
+          "client_title": "MICROALBUMINURIA"
+        }
+      }
+    },
+    "ICON_3": {
+      "aliases": ["ICON3", "ICON-3", "ICON 3"],
+      "map": {
+        "WBC": {
+          "client_code": "412503-14",
+          "client_title": "Globulos Blancos"
+        },
+        "LYM": { "client_code": "412503-14", "client_title": "Linfocitos" },
+        "MID": { "client_code": "412503-14", "client_title": "Células Medias" },
+        "GRA": { "client_code": "412503-14", "client_title": "Granulocitos" },
+        "LYM%": { "client_code": "412503-14", "client_title": "Linfocitos %" },
+        "LYMP": { "client_code": "412503-14", "client_title": "Linfocitos %" },
+        "MID%": {
+          "client_code": "412503-14",
+          "client_title": "Células Medias %"
+        },
+        "MIDP": {
+          "client_code": "412503-14",
+          "client_title": "Células Medias %"
+        },
+        "GRA%": {
+          "client_code": "412503-14",
+          "client_title": "Granulocitos %"
+        },
+        "GRAP": {
+          "client_code": "412503-14",
+          "client_title": "Granulocitos %"
+        },
+        "RBC": { "client_code": "412503-14", "client_title": "Globulos Rojos" },
+        "HGB": { "client_code": "412503-14", "client_title": "Hemoglobina" },
+        "HCT": { "client_code": "412503-14", "client_title": "Hematocrito" },
+        "MCV": {
+          "client_code": "412503-14",
+          "client_title": "Volumen Medio Corpuscular"
+        },
+        "MCH": {
+          "client_code": "412503-14",
+          "client_title": "Hemoglobina Corpuscular Media"
+        },
+        "MCHC": {
+          "client_code": "412503-14",
+          "client_title": "Concentración HGB Corpuscular Media"
+        },
+        "RDWsd": {
+          "client_code": "412503-14",
+          "client_title": "Amplitud de Distribución RBC SD"
+        },
+        "RDWcv": {
+          "client_code": "412503-14",
+          "client_title": "Amplitud de Distribución RBC CV"
+        },
+        "PLT": { "client_code": "412503-14", "client_title": "Plaquetas" },
+        "MPV": {
+          "client_code": "412503-14",
+          "client_title": "Volumen Medio Plaquetario"
+        },
+        "PCT": { "client_code": "412503-14", "client_title": "Plaquetocrito" },
+        "PDWsd": {
+          "client_code": "412503-14",
+          "client_title": "Amplitud de Distribución PLT SD"
+        },
+        "PDWcv": {
+          "client_code": "412503-14",
+          "client_title": "Amplitud de Distribución PLT CV"
+        },
+        "PLC-R%": {
+          "client_code": "412503-14",
+          "client_title": "Promedio Macro-Plaquetas"
+        },
+        "PLC-RP": {
+          "client_code": "412503-14",
+          "client_title": "Promedio Macro-Plaquetas"
+        },
+        "PLC-C": {
+          "client_code": "412503-14",
+          "client_title": "Conteo Macro-Plaquetas"
+        }
+      }
+    }
+  }
+}

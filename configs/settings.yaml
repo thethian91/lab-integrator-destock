@@ -1,0 +1,41 @@
+tcp:
+  host: 0.0.0.0
+  port: 5002
+paths:
+  outbox: /Users/thethian91/Documents/projects/integraciones/lab-integrator-v2/inbox
+memo:
+  limit: 200000
+input:
+  mode: tcp
+file:
+  inbox_dir: ''
+logging:
+  to_file: false
+  level: DEBUG
+api:
+  base_url: https://webhook.site/b58f8283-acc9-42df-985e-1c505cd69b94
+  key: 83e88df2be4da548dbcdda4c7df1c7jf
+  secret: ea9fe9f5f10206f1e5c0217986e0c82e
+  action: ordenes_laboratorio_fecha
+  use_mock: false
+  mock_file: samples/orders_20250901.xml
+  update_exam:
+    enabled: true
+    resultado_global: Normal
+    responsable: PENDIENTEVALIDAR
+    notas: Enviado desde integracion
+orders:
+  poll_every_sec: 0.0
+monitor:
+  autostart_server: true
+results_export:
+  enabled: false
+  interval_ms: 5000
+  batch_size: 200
+  outbox: outbox_xml
+  delivery_mode: http_direct
+  save_files: true
+  save_dir: outbox_xml
+export:
+  save_xml: true
+  dir: outbox_xml/exports

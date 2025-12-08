@@ -1,0 +1,121 @@
+name: Build Windows Executable
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build_exe:
+    name: Build EXE (PyInstaller)
+    runs-on: windows-latest
+    env:
+      APP_NAME: LabIntegratorMonitor
+      ENTRYPOINT: apps/start_monitor.py
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip wheel
+          if (Test-Path "requirements.txt") {
+            pip install -r requirements.txt
+          } else {
+            pip install PySide6
+          }
+          pip install "pyinstaller>=6.6,<7" "pywin32>=306" "setuptools>=70"
+
+      - name: Compute version
+        id: ver
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}"
+          if (-not $env:GITHUB_REF_NAME -or -not $ver -or -not ($ver -match '^v')) {
+            $short = (git rev-parse --short HEAD)
+            $date  = Get-Date -Format "yyyy.MM.dd"
+            $ver = "$date-$short"
+          }
+          "VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "Version = $ver"
+
+      - name: Verify entrypoint & packages
+        shell: pwsh
+        run: |
+          Write-Host "ENTRYPOINT env: $env:ENTRYPOINT"
+          if (-not (Test-Path -LiteralPath $env:ENTRYPOINT)) {
+            Write-Host "Contenido raíz:"; Get-ChildItem -Name
+            Write-Host "Contenido apps/:"; if (Test-Path .\apps) { Get-ChildItem -Recurse -File .\apps | Select-Object FullName }
+            throw "No se encontró $env:ENTRYPOINT"
+          }
+
+          # Asegura que existan los __init__.py para reconocer paquetes
+          if (-not (Test-Path ".\apps\__init__.py")) { New-Item -ItemType File -Path ".\apps\__init__.py" -Force | Out-Null }
+          if (-not (Test-Path ".\apps\monitor\__init__.py")) { New-Item -ItemType File -Path ".\apps\monitor\__init__.py" -Force | Out-Null }
+
+          if (Test-Path ".\lab_core") {
+            if (-not (Test-Path ".\lab_core\__init__.py")) {
+              New-Item -ItemType File -Path ".\lab_core\__init__.py" -Force | Out-Null
+            }
+          }
+
+      - name: Build executable with PyInstaller
+        shell: pwsh
+        run: |
+          $fullEntry = (Resolve-Path -LiteralPath $env:ENTRYPOINT).Path
+          Write-Host "ENTRYPOINT absoluto: $fullEntry"
+
+          $iconArgs = @()
+          if (Test-Path ".\assets\icons\vitronix.ico") { $iconArgs += @("--icon", ".\assets\icons\vitronix.ico") }
+
+          $extraArgs = @()
+          if (Test-Path ".\configs") { $extraArgs += @("--add-data", "configs;configs") }
+          if (Test-Path ".\assets")  { $extraArgs += @("--add-data", "assets;assets") }
+          if (Test-Path ".\lab_core\resources") { $extraArgs += @("--add-data", "lab_core/resources;lab_core/resources") }
+
+          $pyArgs = @(
+            "-y", "--clean", "--windowed",
+            "--name", $env:APP_NAME,
+            "--paths", ".",
+            "--collect-all", "PySide6"
+          ) + $iconArgs + $extraArgs + @($fullEntry)
+
+          Write-Host "PyInstaller args: $($pyArgs -join ' ')"
+          & pyinstaller $pyArgs
+          if ($LASTEXITCODE -ne 0) { Write-Error "PyInstaller falló con código $LASTEXITCODE" }
+
+      - name: Stage runtime (bundle)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts\monitor | Out-Null
+          Copy-Item -Recurse -Force dist\$env:APP_NAME\* artifacts\monitor\
+          if (Test-Path ".\configs") { Copy-Item -Recurse -Force .\configs artifacts\monitor\configs }
+          if (Test-Path ".\README.md") { Copy-Item .\README.md artifacts\monitor\ }
+          if (Test-Path ".\LICENSE") { Copy-Item .\LICENSE artifacts\monitor\ }
+          "@VERSION=${{ env.VERSION }}" | Out-File artifacts\monitor\version.txt -Encoding utf8
+
+      - name: Zip EXE bundle
+        shell: pwsh
+        run: |
+          Compress-Archive -Force -Path artifacts\monitor\* -DestinationPath $env:APP_NAME-${{ env.VERSION }}-win64.zip
+          Get-ChildItem -Recurse artifacts
+
+      - name: Upload artifact (EXE bundle)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ env.VERSION }}-win64
+          path: ${{ env.APP_NAME }}-${{ env.VERSION }}-win64.zip
+          retention-days: 14

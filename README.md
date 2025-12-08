@@ -80,6 +80,7 @@ lab-integrator-v2/
 ├─ requirements.txt
 ├─ requirements-dev.txt
 └─ pyproject.toml
+```
 
 ---
 
@@ -238,6 +239,8 @@ ruff check .
 <valor_referencia>66-181</valor_referencia>
 <valor_adicional>UNITS:nmol/L</valor_adicional>
 </log_envio>
+
+```
 
 ```
 

@@ -11,6 +11,7 @@ from typing import Any
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from lab_core.config import config_dir
 
 log = logging.getLogger("lab.integrator.orders")
 
@@ -26,9 +27,16 @@ def _load_allowed_protocolo_codigos_from_mapping() -> set[str]:
     configurado por analizador.
     """
     try:
-        base_dir = Path(__file__).resolve().parent.parent
-        mapping_path = base_dir / "configs" / "mapping.json"
+        mapping_path = config_dir() / "mapping.json"  # 👈 USAMOS config_dir()
+        log.info("Leyendo mapping.json para filtro de órdenes desde: %s", mapping_path)
+
         data = json.loads(mapping_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        log.warning(
+            "mapping.json no encontrado en %s; no se filtrarán órdenes por protocolo.",
+            mapping_path,
+        )
+        return set()
     except Exception as e:  # fallback defensivo
         log.warning("No se pudo leer mapping.json para filtrar órdenes: %s", e)
         return set()
@@ -44,6 +52,8 @@ def _load_allowed_protocolo_codigos_from_mapping() -> set[str]:
             code = str(code).strip()
             if code:
                 allowed.add(code)
+
+    log.info("Códigos de protocolo permitidos cargados: %d", len(allowed))
     return allowed
 
 

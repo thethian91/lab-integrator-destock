@@ -613,6 +613,10 @@ class DefaultApiClient(ApiClient):
         """
         from urllib.parse import urlencode
 
+        # Algunos analizadores envían "μ" (mu griega) en vez de "µ" (micro sign).
+        # "μ" NO existe en latin-1; lo normalizamos para evitar UnicodeEncodeError.
+        unidad_latin1 = (unidad or "").replace("μ", "µ")
+
         params = {
             "API_Key": self.api_key,
             "API_Secret": self.api_secret,
@@ -623,10 +627,14 @@ class DefaultApiClient(ApiClient):
             "texto": texto or "",
             "valor_cualitativo": "" if valor is None else str(valor),
             "valor_referencia": ref_range or "",
-            "valor_adicional": f"{unidad or ''}",
+            "valor_adicional": f"{unidad_latin1 or ''}",
         }
 
-        url = f"{self.base_url}?{urlencode(params)}"
+        # url = f"{self.base_url}?{urlencode(params)}"
+        url = (
+            f"{self.base_url}?{urlencode(params, encoding='latin-1', errors='strict')}"
+        )
+
         resp = requests.post(url, timeout=self.timeout)
         if resp.status_code >= 300:
             raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:500]}")

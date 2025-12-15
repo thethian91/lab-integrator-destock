@@ -180,6 +180,7 @@ class ResultSender:
             )
 
             xml_payload = self._build_xml(ctx, obx_record)
+
             _log_info("XML construido.")
 
             self._send_one(ctx, xml_payload, obx_record)
@@ -612,6 +613,7 @@ class DefaultApiClient(ApiClient):
         POST <base_url>?API_Key=...&API_Secret=...&accion=agregar_item_examenlab&...
         """
         from urllib.parse import urlencode
+        from .utils.normalize_units import normalize_units_for_sofia
 
         # Algunos analizadores envían "μ" (mu griega) en vez de "µ" (micro sign).
         # "μ" NO existe en latin-1; lo normalizamos para evitar UnicodeEncodeError.
@@ -627,7 +629,7 @@ class DefaultApiClient(ApiClient):
             "texto": texto or "",
             "valor_cualitativo": "" if valor is None else str(valor),
             "valor_referencia": ref_range or "",
-            "valor_adicional": f"{unidad_latin1 or ''}",
+            "valor_adicional": f"{normalize_units_for_sofia(unidad_latin1) or ''}",
         }
 
         # url = f"{self.base_url}?{urlencode(params)}"

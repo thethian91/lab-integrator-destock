@@ -13,7 +13,7 @@ logging:
   to_file: false
   level: DEBUG
 api:
-  base_url: https://webhook.site/b58f8283-acc9-42df-985e-1c505cd69b94
+  base_url: https://webhook.site/e46e8c3a-bc7e-419c-b6f3-2ccd12a63edc
   key: 83e88df2be4da548dbcdda4c7df1c7jf
   secret: ea9fe9f5f10206f1e5c0217986e0c82e
   action: ordenes_laboratorio_fecha

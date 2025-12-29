@@ -37,19 +37,10 @@
         "LYM": { "client_code": "412503-14", "client_title": "Linfocitos" },
         "MID": { "client_code": "412503-14", "client_title": "Células Medias" },
         "GRA": { "client_code": "412503-14", "client_title": "Granulocitos" },
-        "LYM%": { "client_code": "412503-14", "client_title": "Linfocitos %" },
         "LYMP": { "client_code": "412503-14", "client_title": "Linfocitos %" },
-        "MID%": {
-          "client_code": "412503-14",
-          "client_title": "Células Medias %"
-        },
         "MIDP": {
           "client_code": "412503-14",
           "client_title": "Células Medias %"
-        },
-        "GRA%": {
-          "client_code": "412503-14",
-          "client_title": "Granulocitos %"
         },
         "GRAP": {
           "client_code": "412503-14",
@@ -93,10 +84,6 @@
           "client_title": "Amplitud de Distribución PLT CV"
         },
         "PLC-R%": {
-          "client_code": "412503-14",
-          "client_title": "Promedio Macro-Plaquetas"
-        },
-        "PLC-RP": {
           "client_code": "412503-14",
           "client_title": "Promedio Macro-Plaquetas"
         },
